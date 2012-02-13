@@ -1,0 +1,11 @@
+name = Mailjet settings
+description = "Send your emails by your Mailjet API."
+core = 7.x
+package = Mail
+configure = admin/config/system/mj_customsmtp
+files[] = mj_customsmtp.module
+files[] = mj_customsmtp.admin.inc
+files[] = mj_customsmtp.mail.inc
+files[] = mj_customsmtp.phpmailer.inc
+files[] = mj_customsmtp.transport.inc
+version = 1.0
