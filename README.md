@@ -1,1 +1,1 @@
-# drupal-mailjet-module-apiv3-
+# drupal-mailjet-module-apiv3
