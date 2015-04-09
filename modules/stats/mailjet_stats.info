@@ -1,0 +1,9 @@
+name = Mailjet Stats
+description = "Add support for viewing MailJet Stats."
+core = 7.x
+php = 5.3
+package = MailJet
+dependencies[] = views_date_format_sql
+;dependencies[] = charts
+dependencies[] = views
+dependencies[] = mailjet

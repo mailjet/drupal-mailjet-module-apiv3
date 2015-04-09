@@ -1,0 +1,8 @@
+name = Mailjet Campaigns
+description = "Add support for sending MailJet Campaigns."
+core = 7.x
+php = 5.3
+package = MailJet
+
+dependencies[] = mailjet
+dependencies[] = entity
