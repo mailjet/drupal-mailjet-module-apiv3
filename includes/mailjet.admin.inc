@@ -473,7 +473,7 @@ function mailjet_api_form_validate($form, $form_state)
         }
 
     } else {
-        form_set_error('mailjet_username', t('Either API Key or Secret Key is incorect.'));
+        form_set_error('mailjet_username', t('Please verify that you have entered your API and secret key correctly. Please note this plug-in is compatible for Mailjet v3 accounts only. Click <a href=" https://app.mailjet.com/support/why-do-i-get-an-api-error-when-trying-to-activate-a-mailjet-plug-in,497.htm"> here</a> for more information'));
         form_set_error('mailjet_password', '');
     }
 }
