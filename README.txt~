@@ -1,4 +1,4 @@
----
+
 This module for Drupal 7.x. provides complete control of Email settings with Drupal and Mailjet.
 It simply replaces your default SMTP settings in order to make all your emails go through Mailjet: this will improve your deliverability and allow you to optimize your campaigns.
 
