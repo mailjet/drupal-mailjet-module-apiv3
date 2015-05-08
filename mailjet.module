@@ -676,9 +676,9 @@ function mailjet_sync_single_user($infos, $type)
         $mj_lists = explode(",", $user[$infos['mail']]['mj_lists']);
         $mj_lists = array_diff($mj_lists, array(''));
     }
-    if (!empty($defaul_mj_list)) {
+    //if (!empty($defaul_mj_list)) {
         $mj_lists[] = mailjet_get_default_list_id($mailjet);
-    }
+    //}
 
     switch ($type) {
         case 'add':
