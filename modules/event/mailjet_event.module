@@ -149,12 +149,6 @@ function mailjet_event_callback() {
       rules_invoke_event('mailjet_unsub', $mailjet_event);
       break;
 
-    case 'typofix' :
-      $mail_user = user_load_by_mail($event['original_address']);
-      rules_invoke_event('mailjet_typofix', $mailjet_event);
-      drupal_send_headers();
-      break;
-
     // No handler
     default :
       drupal_not_found();
