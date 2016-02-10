@@ -19,7 +19,7 @@ function mailjet_campaign_iframe() {
     $defaultLang = 'en';
     $locale = isset($langCodesMap[$language->language]) ? $langCodesMap[$language->language] : $langCodesMap[$defaultLang];
 
-    $callbackurl = urlencode($base_url . '?q=/admin/mailjet/campaign/alter_callback');
+    $callbackurl = urlencode($base_url . '/?q=/admin/mailjet/campaign/alter_callback');
 
     $default_url = IFRAME_URL."campaigns/?f=ams&r=commerceguys&t={$token}&show_menu=none&sp=display&locale={$locale}&cb=";
 
