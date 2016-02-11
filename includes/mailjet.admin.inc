@@ -12,22 +12,24 @@ function mailjet_admin_settings_form()
 {
 
     if (variable_get('mailjet_active', FALSE)) {
-        $form['onoff'] = array(
+        $form['general'] = array(
             '#type' => 'fieldset',
             '#title' => t('General settings')
         );
 
         $mail_system = variable_get('mail_system');
-        if (isset($mail_system['default-system']) && $mail_system['default-system'] == 'MailjetSmtpMailSystem') {
-            $mailjet_on = TRUE;
-        } else {
-            $mailjet_on = FALSE;
-        }
+        $mailjet_on = isset($mail_system['default-system']) && $mail_system['default-system'] == 'MailjetSmtpMailSystem';
 
-        $form['onoff']['mailjet_on'] = array(
+        $form['general']['mailjet_on'] = array(
             '#type' => 'checkbox',
             '#title' => t('Send emails through Mailjet'),
             '#default_value' => $mailjet_on
+        );
+
+        $form['general']['allow_html'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Allow HTML'),
+            '#default_value' => variable_get('mailjet_allowhtml', TRUE),
         );
 
         if ($tracking_check = mailjet_user_trackingcheck()) {
@@ -281,6 +283,9 @@ function mailjet_admin_settings_form_submit($form, &$form_state)
         $mail_system['default-system'] = 'DefaultMailSystem';
         variable_set('mail_system', $mail_system);
     }
+    if (isset($form_state['values']['allow_html'])) {
+        variable_set('mailjet_allowhtml', $form_state['values']['allow_html']);
+    }
 }
 
 /**
@@ -370,29 +375,26 @@ function mailjet_admin_test_message_form_submit($form, &$form_state)
     global $language;
 
     $from = mailjet_get_a_trusted_email();
-    $params['subject'] = t('Your test mail from Mailjet');
-    $params['body'] = array(
+    $subject = t('Your test mail from Mailjet');
+    $body = array(
         t('Your Mailjet configuration is ok!<br/><strong>This text should be bold if HTML is allowed.</strong>')
     );
 
-    $params['headers'] = array(
-        'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
-        'X-Mailer' => 'MailJet',
-    );
-
-    $message = drupal_mail('mailjet', 'mailjet-test', $test_address, $language, $params, $from, FALSE);
+    $message = drupal_mail('mailjet', 'mailjet-test', $test_address, $language, array(), $from, FALSE);
 
     if (empty($message['from'])) {
         $message['from'] = variable_get('site_mail', '');
     }
     if (empty($message['subject'])) {
-        $message['subject'] = $params['subject'];
+        $message['subject'] = $subject;
     }
     if (empty($message['body'])) {
-        $message['body'] = $params['body'];
+        $message['body'] = $body;
     }
 
     $mail_system = new MailjetSmtpMailSystem();
+
+    $message = $mail_system->format($message);
 
     if ($mail_system->mail($message)) {
         drupal_set_message(t('A test e-mail has been sent to @email.', array(

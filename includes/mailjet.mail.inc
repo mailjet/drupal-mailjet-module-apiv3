@@ -57,8 +57,19 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       $body = $message['params']['body'][0];
     }
 
-    // Merge drupal_mail's default headers and any custom ones, if given.
-    // Without this, we can not use HTML mail, for example.
+    // Add MailJet as the X-Mailer header.
+    $headers = array_merge($headers, array('X-Mailer' => 'MailJet'));
+
+    // If the content type is text/plain and the mailjet_allowhtml variable is
+    // set, then force the content type to text/html. Then we can allow
+    // the format() method of this mail system to escape it afterwards.
+    if (variable_get('mailjet_allowhtml', TRUE) && (!isset($headers['Content-Type']) || strpos($headers['Content-Type'], 'text/plain') !== FALSE)) {
+      $headers = array_merge($headers, array(
+        'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+      ));
+    }
+
+    // Merge in any custom headers added via the message params.
     if (isset($message['params']['headers'])) {
       $headers = array_merge($headers, $message['params']['headers']);
     }
