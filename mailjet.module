@@ -691,12 +691,10 @@ function mailjet_sync_single_user($infos, $type)
                 $response = $mailjet->manycontacts($add_params)->getResponse();
                 if ($response && isset($response->Count) && $response->Count > 0) {
                     if ($mailjet_debug) {
-                        if ($mailjet_debug) {
-                            watchdog('mailjet', 'The contact @mail was added to list #@list_no', array(
-                                '@mail' => $infos['mail'],
-                                '@list_no' => $value,
-                            ), WATCHDOG_DEBUG);
-                        }
+                        watchdog('mailjet', 'The contact @mail was added to list #@list_no', array(
+                            '@mail' => $infos['mail'],
+                            '@list_no' => $value,
+                        ), WATCHDOG_DEBUG);
                     }
                     $contactID = $response->Data[0]->Recipients->Items[0]->Contact->ID;
 
