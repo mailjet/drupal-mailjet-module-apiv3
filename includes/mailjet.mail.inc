@@ -6,7 +6,6 @@
 
 class MailjetSmtpMailSystem implements MailSystemInterface {
 
-  protected $AllowHtml;
   /**
    * Concatenate and wrap the e-mail body for either
    * plain-text or HTML emails.
@@ -18,10 +17,10 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
    *   The formatted $message.
    */
   public function format(array $message) {
-    $this->AllowHtml = variable_get('mailjet_allowhtml', TRUE);
+    $allow_html = variable_get('mailjet_allowhtml', TRUE);
     // Join the body array into one string.
     $message['body'] = implode("\n\n", $message['body']);
-    if (! $this->AllowHtml) {
+    if (!$allow_html) {
       // Convert any HTML to plain-text.
       $message['body'] = drupal_html_to_text($message['body']);
       // Wrap the mail body for sending.
@@ -165,9 +164,9 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
             // If a from value was already given, then set based on header.
             // Should be the most common situation since drupal_mail moves the
             // from to headers.
-            $from           = $value;
+            $from             = $value;
             $mailer->From     = $value;
-            // Then from can be out of sync with from_name !
+            // Then from can be out of sync with from_name!
             $mailer->FromName = '';
             $mailer->Sender   = $value;
           }
