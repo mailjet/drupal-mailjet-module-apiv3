@@ -41,6 +41,9 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
    *   TRUE if the mail was successfully accepted, otherwise FALSE.
    */
   public function mail(array $message) {
+
+    $mailjet_debug = (bool) variable_get('mailjet_debug', FALSE);
+
     $id       = $message['id'];
     $to       = $message['to'];
     $from     = $message['from'];
@@ -78,8 +81,9 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       require_once drupal_get_path('module', 'mailjet') . '/includes/phpmailer/class.phpmailer.php';
     }
     else {
-      drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
-
+      if ($mailjet_debug) {
+        watchdog('mailjet', 'Unable to send mail: PHPMailer library does not exist.', array(), WATCHDOG_ERROR);
+      }
       return FALSE;
     }
 
@@ -109,10 +113,8 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       if (($from = variable_get('site_from', '')) == '') {
         // If smtp_from config option is blank, use site_email.
         if (($from = variable_get('site_mail', '')) == '') {
-          drupal_set_message(t('There is no submitted from address.'), 'error');
-
-          if (variable_get('mailjet_debug')) {
-            watchdog('mailjet', 'There is no submitted from address.', array(), WATCHDOG_ERROR);
+          if ($mailjet_debug) {
+            watchdog('mailjet', 'There is no available email "from" address.', array(), WATCHDOG_ERROR);
           }
 
           return FALSE;
@@ -127,9 +129,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       $from      = preg_replace("/(.*)\<(.*)\>/i", '$2', $from);
     }
     elseif (!valid_email_address($from)) {
-      drupal_set_message(t('The submitted from address (@from) is not valid.', array('@from' => $from)), 'error');
-
-      if (variable_get('mailjet_debug')) {
+      if ($mailjet_debug) {
         watchdog('mailjet', 'The submitted from address (@from) is not valid.', array('@from' => $from), WATCHDOG_ERROR);
       }
 
@@ -226,11 +226,10 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
               break;
 
             default:
-              // Everything else is unsuppored by PHPMailer.
-              drupal_set_message(t('The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.'), 'error');
+              // Everything else is unsupported by PHPMailer.
 
-              if (variable_get('mailjet_debug')) {
-                  watchdog('mailjet', 'The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.', array(), WATCHDOG_ERROR);
+              if ($mailjet_debug) {
+                watchdog('mailjet', 'The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.', array(), WATCHDOG_WARNING);
               }
 
               // Force the Content-Type to be text/plain.
@@ -420,7 +419,9 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
 
             if (file_exists($file_path)) {
               if (!$mailer->AddAttachment($file_path, $file_name, $file_encoding, $filetype)) {
-                drupal_set_message(t('Attahment could not be found or accessed.'));
+                if ($mailjet_debug) {
+                  watchdog('mailjet', 'Attachment could not be found or accessed.', array(), WATCHDOG_WARNING);
+                }
               }
             }
             else {
@@ -441,7 +442,9 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
               $file_path               = file_save_data($attachment, $attachment_new_filename, FILE_EXISTS_RENAME);
 
               if (!$mailer->AddAttachment($file_path, $file_name)) {
-                drupal_set_message(t('Attachment could not be found or accessed.'));
+                if ($mailjet_debug) {
+                  watchdog('mailjet', 'Attachment could not be found or accessed.', array(), WATCHDOG_WARNING);
+                }
               }
             }
           }
@@ -484,20 +487,18 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
     $mailer->Port   = variable_get('mailjet_port', '587');
     $mailer->Mailer = 'smtp';
 
-    if (variable_get('mailjet_debug')) {
-        watchdog('mailjet', 'Sending mail to: @to', array('@to' => $to));
+    if ($mailjet_debug) {
+      watchdog('mailjet', 'Sending mail to: @to', array('@to' => $to));
     }
 
     // Try to send e-mail. If it fails, set watchdog entry.
     if (!$mailer->Send()) {
-      if (variable_get('mailjet_debug')) {
-          watchdog('mailjet',
-                   'Error sending e-mail from @from to @to : @error_message',
-                   array(
-                     '@from' => $from,
-                     '@to' => $to,
-                     '@error_message' => $mailer->ErrorInfo),
-                   WATCHDOG_ERROR);
+      if ($mailjet_debug) {
+        watchdog('mailjet', 'Error sending e-mail from @from to @to : @error_message', array(
+          '@from' => $from,
+          '@to' => $to,
+          '@error_message' => $mailer->ErrorInfo
+        ), WATCHDOG_ERROR);
       }
       return FALSE;
     }
