@@ -647,6 +647,9 @@ function mailjet_user_insert($infos)
  */
 function mailjet_user_update($infos)
 {
+    if (!isset($infos['status'])) {
+        return;
+    }
     if ($infos['status'] > 0) { //should be the same as cancel hook
         mailjet_sync_single_user($infos, 'update');
     } else {
@@ -902,7 +905,7 @@ function get_sync_info($infos)
     $drupal_users = array();
     foreach ($views as $v) {
         // check if the view is type 'user' (the type for MJ lists)
-        if ($v->base_table == "users") {
+        if ($v->base_table == "users" && isset($v->display['default']->display_options['style_options']['email'])) {
             //execute view
             $field = $v->display['default']->display_options['style_options']['email'];
             $v->execute();
