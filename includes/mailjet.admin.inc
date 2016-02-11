@@ -32,6 +32,12 @@ function mailjet_admin_settings_form()
             '#default_value' => variable_get('mailjet_allowhtml', TRUE),
         );
 
+        $form['general']['debug_mode'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Debug mode'),
+            '#default_value' => variable_get('mailjet_debug', FALSE),
+        );
+
         if ($tracking_check = mailjet_user_trackingcheck()) {
 
             $form['tracking'] = array(
@@ -285,6 +291,9 @@ function mailjet_admin_settings_form_submit($form, &$form_state)
     }
     if (isset($form_state['values']['allow_html'])) {
         variable_set('mailjet_allowhtml', $form_state['values']['allow_html']);
+    }
+    if (isset($form_state['values']['debug_mode'])) {
+        variable_set('mailjet_debug', $form_state['values']['debug_mode']);
     }
 }
 
