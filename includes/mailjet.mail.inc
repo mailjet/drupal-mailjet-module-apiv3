@@ -57,6 +57,12 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       $body = $message['params']['body'][0];
     }
 
+    // Merge drupal_mail's default headers and any custom ones, if given.
+    // Without this, we can not use HTML mail, for example.
+    if (isset($message['params']['headers'])) {
+      $headers = array_merge($headers, $message['params']['headers']);
+    }
+
     // If we use the phpmailer library internally the path to the library should be changed.
     if (file_exists(drupal_get_path('module', 'mailjet') . '/includes/phpmailer/class.phpmailer.php')) {
       require_once drupal_get_path('module', 'mailjet') . '/includes/phpmailer/class.phpmailer.php';

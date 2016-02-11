@@ -372,7 +372,12 @@ function mailjet_admin_test_message_form_submit($form, &$form_state)
     $from = mailjet_get_a_trusted_email();
     $params['subject'] = t('Your test mail from Mailjet');
     $params['body'] = array(
-        t('Your Mailjet configuration is ok!')
+        t('Your Mailjet configuration is ok!<br/><strong>This text should be bold if HTML is allowed.</strong>')
+    );
+
+    $params['headers'] = array(
+        'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+        'X-Mailer' => 'MailJet',
     );
 
     $message = drupal_mail('mailjet', 'mailjet-test', $test_address, $language, $params, $from, FALSE);
