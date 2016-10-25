@@ -12,7 +12,7 @@ function mailjet_register_iframe() {
     $locale = isset($langCodesMap[$language->language]) ? $langCodesMap[$language->language] : $langCodesMap[$defaultLang];
     
     $default_url = IFRAME_URL."reseller/signup?r=commerceguys&sp=display&p=drupal-3.0&locale={$locale}&cb=";
-    $callbackurl = urlencode($base_url . '/?q=/admin/config/system/mailjet/api/register/alter_callback');
+    $callbackurl = urlencode($base_url . '?q=/admin/config/system/mailjet/api/register/alter_callback');
     return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
 }
 
