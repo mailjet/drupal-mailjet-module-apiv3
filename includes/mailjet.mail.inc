@@ -57,15 +57,24 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       $body = $message['params']['body'][0];
     }
 
-    // If we use the phpmailer library internally the path to the library should be changed.
-    if (file_exists(drupal_get_path('module', 'mailjet') . '/includes/phpmailer/class.phpmailer.php')) {
-      require_once drupal_get_path('module', 'mailjet') . '/includes/phpmailer/class.phpmailer.php';
-    }
-    else {
-      drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
+      // Try to load the library and check if that worked.
+      if (($library = libraries_load('phpmailer')) && $library['loaded']) {
+          // Do something with the library here.
+      } else {
+          drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
+          return false;
+      }
 
-      return FALSE;
-    }
+//
+//    // If we use the phpmailer library internally the path to the library should be changed.
+//    if (file_exists(drupal_get_path('module', 'mailjet') . '/includes/phpmailer/class.phpmailer.php')) {
+//      require_once drupal_get_path('module', 'mailjet') . '/includes/phpmailer/class.phpmailer.php';
+//    }
+//    else {
+//      drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
+//
+//      return FALSE;
+//    }
 
     // Create a new PHPMailer object - autoloaded from registry.
     $mailer = new PHPMailer();
