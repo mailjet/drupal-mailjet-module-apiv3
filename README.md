@@ -26,6 +26,14 @@ Recommended modules
   For the list module you need to install:
   * viewfield (https://www.drupal.org/project/viewfield)
 
+Prerequisits
+------------
+
+The Mailjet plugin relies on the PHPMailer v5.2.8 for sending emails. This script must be uplodaded manually by the user in the Drupal instalation.
+1) Create a folder named "phpmailer" inside DRUPAL_ROOT/sites/all/libraries
+2) Get the PHPMailer v5.2.8 from Git Hub here: http://github.com/PHPMailer/PHPMailer/archive/v5.2.8.zip
+3) Unzip the archive and put all contents inside the DRUPAL_ROOT/sites/all/libraries/phpmailer folder that was created in step 2
+
 Installation
 ------------
 
