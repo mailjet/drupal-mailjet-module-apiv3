@@ -271,17 +271,11 @@ function mailjet_libraries_info()
   $libraries['phpmailer'] = array(
     'name' => 'phpmailer',
     'vendor url' => 'http://github.com/PHPMailer/PHPMailer',
-    'download url' => 'http://github.com/PHPMailer/PHPMailer/archive/v5.2.8.zip',
-    //'path' => 'phpmailer',
-    'version arguments' => array(
-      'file' => 'changelog.md',
-      'pattern' => '@## Version\s+([0-9a-zA-Z\.-]+)@',
-      'lines' => 5,
-      'cols' => 20
-    ),
+    'download url' => 'http://github.com/PHPMailer/PHPMailer/archive/v5.2.21.zip',
+    'version' => '5.2.21',
     'files' => array(
       'php' => array(
-        'class.phpmailer.php'
+        'PHPMailerAutoload.php'
       )
     )
   );
