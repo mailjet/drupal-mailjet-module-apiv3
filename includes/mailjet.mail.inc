@@ -61,6 +61,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
     if (function_exists('libraries_load')) {
       $library = libraries_load('phpmailer');
       if (empty($library) || empty($library['loaded'])) {
+        watchdog('mailjet', 'Unable to send mail : Libraries API can not load PHPMailer library.', array(), WATCHDOG_ERROR);
         drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
         return FALSE;
       }
@@ -71,6 +72,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
     }
     else {
       drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
+      watchdog('mailjet', 'Unable to send mail : Libraries API and PHPMailer library does not exist .', array(), WATCHDOG_ERROR);
       return FALSE;
     }
 
