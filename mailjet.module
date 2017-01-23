@@ -168,7 +168,9 @@ function mailjet_domains_add_form_submit($form, &$form_state)
 {
   $domain = $form_state['values']['domain'];
   if (mailjet_user_domain_add($domain)) {
-    drupal_set_message(t('Your domain @domain has successfully been added to MailJet. You will need to create a text file to confirm domain ownership.',
+    drupal_set_message(t('Your domain @domain has successfully been added to MailJet. 
+      To confirm domain ownership you must create an empty text file and place it in the root folder of the website.  
+      The file name is shown in the table below on the same line as your newly added domain.',
       array(
         '@domain' => $domain
       )));
