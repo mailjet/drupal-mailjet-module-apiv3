@@ -536,6 +536,10 @@ function _has_drupal_property($mailjet_property, $drupal_fields)
  */
 function mailjet_properties_sync($newField = null, $delete = FALSE)
 {
+  if (!variable_get('mailjet_properties_sync', TRUE)) {
+    return;
+  }
+
   global $user;
 
   //get all user fields from Drupal system
@@ -659,11 +663,14 @@ function mailjet_user_insert($infos)
  */
 function mailjet_user_update($infos)
 {
-  if ($infos['status'] > 0) { //should be the same as cancel hook
-    mailjet_sync_single_user($infos, 'update');
-  }
-  else {
-    mailjet_sync_single_user($infos, 'remove');
+  // Only trigger updates when the account status has changed.
+  if (isset($infos['status'])) {
+    if ($infos['status'] > 0) { //should be the same as cancel hook
+        mailjet_sync_single_user($infos, 'update');
+    }
+    else {
+        mailjet_sync_single_user($infos, 'remove');
+    }
   }
 }
 
@@ -682,6 +689,10 @@ function mailjet_user_cancel($infos)
 
 function mailjet_sync_single_user($infos, $type)
 {
+  if (!variable_get('mailjet_properties_sync', TRUE)) {
+    return;
+  }
+
   mailjet_properties_sync();
   $mailjet = mailjet_new();
 
@@ -926,7 +937,7 @@ function get_sync_info($infos)
   $drupal_users = array();
   foreach ($views as $v) {
     // check if the view is type 'user' (the type for MJ lists)
-    if ($v->base_table == "users") {
+    if ($v->base_table == "users" && isset($v->display['default']->display_options['style_options']['email'])) {
       //execute view
       $field = $v->display['default']->display_options['style_options']['email'];
       $v->execute();
@@ -971,7 +982,7 @@ function get_sync_info($infos)
               //ADD ALL FIELDS
               if (strpos($key, "field_") !== FALSE) {
                 $drupal_users[$v->render_field($field, $x)]['properties'][str_replace('field_', '',
-                  $key)] = (!empty($value)) ? $value['und'][0]['value'] : '';
+                $key)] = (!empty($value)) ? $value['und'][0]['value'] : '';
               }
             }
           }
@@ -1004,11 +1015,8 @@ function get_sync_info($infos)
             'mail' => $infos['original']->mail,
             'created' => $infos['original']->created
           );
-
           $drupal_users[$infos['mail']]['mj_lists'] = $lists;
         }
-
-
       }
     }
   }
@@ -1084,6 +1092,10 @@ function mailjet_create_default_list($mailjet)
  */
 function mailjet_first_sync($list_id)
 {
+  if (!variable_get('mailjet_properties_sync', TRUE)) {
+    return;
+  }
+
   mailjet_properties_sync();
 
   //get all drupal users
