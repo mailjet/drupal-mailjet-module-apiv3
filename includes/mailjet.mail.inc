@@ -57,8 +57,9 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       $body = $message['params']['body'][0];
     }
 
-    // Try to load the library using Libraries API, if present.
-    if (function_exists('libraries_load')) {
+    // If the PHPMailer class is not yet auto-loaded, try to load the library
+    // using Libraries API, if present.
+    if (!class_exists('PHPMailer') && function_exists('libraries_load')) {
       $library = libraries_load('phpmailer');
       if (empty($library) || empty($library['loaded'])) {
         watchdog('mailjet', 'Unable to send mail : Libraries API can not load PHPMailer library.', array(), WATCHDOG_ERROR);

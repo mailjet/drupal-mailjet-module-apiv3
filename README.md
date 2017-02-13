@@ -41,10 +41,17 @@ Prerequisites
 -------------
 
 The Mailjet plugin relies on the PHPMailer v5.2.21 for sending emails.
-This script must be uplodaded manually by the user in the Drupal instalation.
-1) Get the PHPMailer v5.2.21 from GitHub here:
-http://github.com/PHPMailer/PHPMailer/archive/v5.2.21.zip
-2) Extract the archive and rename the folder "PHPMailer-5.2.21" to "phpmailer".
+
+To install PHPMailer via composer use:
+
+```
+composer require phpmailer/phpmailer=~5.2
+```
+
+To install PHPMailer manually:
+1) Get the PHPMailer v5.2.22 from GitHub here:
+http://github.com/PHPMailer/PHPMailer/archive/v5.2.22.zip
+2) Extract the archive and rename the folder "PHPMailer-5.2.22" to "phpmailer".
 3) Upload the "phpmailer" folder to your server inside
 DRUPAL_ROOT/sites/all/libraries/.
 4) Verify that the file class.phpmailer.php is correctly located at this

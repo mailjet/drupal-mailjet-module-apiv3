@@ -551,13 +551,17 @@ function mailjet_properties_sync($newField = null, $delete = FALSE)
       $current_field = field_info_field($key);
 
       $field_type = 'str';
-      if ($current_field['columns']['value']['type'] == "int") {
-        $field_type = 'int';
+      if (isset($current_field['columns']['value'])) {
+        if ($current_field['columns']['value']['type'] == "int") {
+          $field_type = 'int';
+        }
+        if ($current_field['columns']['value']['type'] == "float") {
+          $field_type = 'float';
+        }
       }
-      if ($current_field['columns']['value']['type'] == "float") {
-        $field_type = 'float';
+      elseif (isset($current_field['columns']['target_id'])) {
+        $field_type = $current_field['columns']['target_id']['type'];
       }
-
 
       $user_fields[] = array(
         "Name" => str_replace('field_', '', $key),
