@@ -137,7 +137,8 @@ Author
 Mailjet SAS
 plugins@mailjet.com
 
-== Changelog ==
+Changelog
+---------
 
 = 7.x-2.13 6 Mar 2017 =
 * Bug fix: Unable to send more than 1 mail per request when using Libraries API in a non default directory
