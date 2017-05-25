@@ -1054,15 +1054,17 @@ function is_batchjob_running($bjID)
  */
 function mailjet_get_default_list_id($mailjet)
 {
-  $contactLists = $mailjet->contactslist()->getResponse();
-  if (!empty($contactLists) && is_array($contactLists->Data)) {
-    foreach ($contactLists->Data as $list) {
-      if ($list->Name === mailjet_get_default_list_name()) {
-        return $list->ID;
-      }
-    }
-  }
-  return mailjet_create_default_list($mailjet);
+  $getlist_params = array(
+        'method' => 'GET',
+        'Name' => mailjet_get_default_list_name()
+    );
+    $mailjet->resetRequest();
+    // Gets Mailjet contact list by name
+    $contactLists = $mailjet->contactslist($getlist_params)->getResponse();
+	if ($contactLists && $contactLists->Count > 0) {
+		$def_list_id = $contactLists->Data[0]->ID;
+	}
+	return empty($def_list_id) ? mailjet_create_default_list($mailjet) : $def_list_id;
 }
 
 function mailjet_get_default_list_name()
