@@ -24,6 +24,7 @@ Requirements
   * Views (https://www.drupal.org/project/views)
   * Views Bulk Operations (https://www.drupal.org/project/views_bulk_operations)
   * Entity (https://www.drupal.org/project/entity)
+  * Chaos tool suite (ctools) (https://www.drupal.org/project/ctools)
 
 Recommended modules
 -------------------
@@ -139,6 +140,9 @@ plugins@mailjet.com
 
 Changelog
 ---------
+
+= 7.x-2.14 26 May 2017 =
+* Bug fix: Unable to synchronize a new user if the Drupal contact list already exists
 
 = 7.x-2.13 6 Mar 2017 =
 * Bug fix: Unable to send more than 1 mail per request when using Libraries API in a non default directory
