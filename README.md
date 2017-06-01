@@ -140,6 +140,10 @@ plugins@mailjet.com
 Changelog
 ---------
 
+= 7.x-2.14 1 June 2017 =
+* Bug fix: Messages improved
+* Bug fix: Validate add domain field
+
 = 7.x-2.13 6 Mar 2017 =
 * Bug fix: Unable to send more than 1 mail per request when using Libraries API in a non default directory
 https://www.drupal.org/node/2853496
