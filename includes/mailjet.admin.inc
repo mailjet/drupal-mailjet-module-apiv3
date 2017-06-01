@@ -36,6 +36,19 @@ function mailjet_admin_settings_form()
                 '#type' => 'fieldset',
                 '#title' => t('Tracking')
             );
+            
+            $form['tracking']['text'] = array(
+                '#type' => 'markup',
+                '#markup' => 'Log into <a href="https://app.mailjet.com/account/triggers" target="_blank">https://app.mailjet.com/account/triggers</a> and paste the URL below into the ENDPOINT URL field <br>'
+                . 'corresponding to the events you want to track in Drupal. Then check the same events below.',
+            );
+            
+            $form['tracking']['event_url'] = array(
+                '#type' => 'markup',
+                '#markup' => "<p><strong>Event callback URL: </strong>".url('mailjetevent', array('absolute' => TRUE))."</p>",
+            );
+
+            variable_set("mj_callback_url", url('mailjetevent', array('absolute' => TRUE)));
 
             $check = array(
                 "open" => 0,
@@ -153,10 +166,17 @@ function mailjet_admin_settings_form()
                 '#default_value' => $user_infos['AddressCity'],
                 '#required' => TRUE
             );
+            
+            $form['infos']['address_province_state'] = array(
+                '#type' => 'textfield',
+                '#title' => t('Province / State'),
+                '#default_value' => $user_infos['AddressProvinceState'],
+                '#required' => FALSE
+            );
 
             $form['infos']['address_postal_code'] = array(
                 '#type' => 'textfield',
-                '#title' => t('Post Code'),
+                '#title' => t('Postal Code / Zip Code'),
                 '#default_value' => $user_infos['AddressPostalCode'],
                 '#required' => TRUE
             );
