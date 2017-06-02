@@ -41,9 +41,9 @@ function mailjet_trigger_examples_default_message_type() {
           "safe_value" : "\u003Cp\u003ENew offers\u003C\/p\u003E\n"
         },
         {
-          "value" : "Dear customer,\u003Cbr\u003E\u003Cbr\u003E\u003Cbr\u003E\r\nWe would like to let you know about our new avaiable products. You can visit our web site and chose from various of new products and get your 50% discout. ",
+          "value" : "Hi,\u003Cbr\u003E\u003Cbr\u003E\u003Cbr\u003E\r\nIt\'s been a while since you have visited and we miss you. Drop by our website today and receive 50% off any one item!",
           "format" : "commerce_order_message",
-          "safe_value" : "Dear customer,\nWe would like to let you know about our new avaiable products. You can visit our web site and chose from various of new products and get your 50% discout."
+          "safe_value" : "Hi,\nIt\'s been a while since you have visited and we miss you. Drop by our website today and receive 50% off any one item!"
         }
       ]
     }
@@ -68,9 +68,9 @@ function mailjet_trigger_examples_default_message_type() {
           "safe_value" : "\u003Cp\u003EAnniversary Offer\u003C\/p\u003E\n"
         },
         {
-          "value" : "Dear customer,\u003Cbr\u003E\u003Cbr\u003E\u003Cbr\u003E\r\nSince you were a loyal customer for one whole year we would like to let you know about our new avaiable products. You can visit our web site and chose from various of new products and get your 50% discout. ",
+          "value" : "Hi,\u003Cbr\u003E\u003Cbr\u003E\u003Cbr\u003E\r\nAs you have been a loyal customer for the last year, we would like to offer you a special gift! Come visit our web store and receive 30% off on all our new products!",
           "format" : "commerce_order_message",
-          "safe_value" : "Dear customer,\nSince you were a loyal customer for one whole year we would like to let you know about our new avaiable products. You can visit our web site and chose from various of new products and get your 50% discout."
+          "safe_value" : "Hi,\nAs you have been a loyal customer for the last year, we would like to offer you a special gift! Come visit our web store and receive 30% off on all our new products!"
         }
       ]
     }
@@ -95,9 +95,9 @@ function mailjet_trigger_examples_default_message_type() {
           "safe_value" : "\u003Cp\u003EYour order exceeded 30 minutes\u003C\/p\u003E\n"
         },
         {
-          "value" : "Dear customer,\u003Cbr\u003E\u003Cbr\u003E\u003Cbr\u003E\r\nYour order exceeded 30 minutes,  please go back and complete your order",
+          "value" : "Hey,\u003Cbr\u003E\u003Cbr\u003E\u003Cbr\u003E\r\n where did you go?",
           "format" : "commerce_order_message",
-          "safe_value" : "Dear customer,\nYour order exceeded 30 minutes,  please go back and complete your order"
+          "safe_value" : "Hey,\n where did you go?"
         }
       ]
     }

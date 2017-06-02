@@ -144,21 +144,34 @@ function mailjet_menu()
  */
 function mailjet_domains_add_form($form_state)
 {
-  $form = array();
+    $form = array();
 
-  $form['domain'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Domain'),
-    '#description' => t('The domain you are adding to MailJet.'),
-    '#required' => TRUE
-  );
+    $form['domain'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Domain'),
+      '#description' => t('Please enter the domain name that you will be adding to your Mailjet account.'),
+      '#required' => FALSE
+    );
 
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add'),
-  );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add'),
+    );
 
-  return $form;
+    return $form;
+}
+
+/**
+ * Validate domain field of mailjet_domains_add_form
+ * domain allowed characters: letters, numbers and hyphen(-)
+ * domain cannot start or end with hyphen(-)
+ */
+function mailjet_domains_add_form_validate($form, &$form_state) {
+    if(!preg_match("/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/", $form_state['values']['domain'])) {
+        form_set_error('name', t('Please enter a valid domain name.'));
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -168,7 +181,7 @@ function mailjet_domains_add_form_submit($form, &$form_state)
 {
   $domain = $form_state['values']['domain'];
   if (mailjet_user_domain_add($domain)) {
-    drupal_set_message(t('Your domain @domain has successfully been added to MailJet. 
+    drupal_set_message(t('Your domain @domain has successfully been added to Mailjet. 
       To confirm domain ownership you must create an empty text file and place it in the root folder of the website.  
       The file name is shown in the table below on the same line as your newly added domain.',
       array(
@@ -1054,15 +1067,17 @@ function is_batchjob_running($bjID)
  */
 function mailjet_get_default_list_id($mailjet)
 {
-  $contactLists = $mailjet->contactslist()->getResponse();
-  if (!empty($contactLists) && is_array($contactLists->Data)) {
-    foreach ($contactLists->Data as $list) {
-      if ($list->Name === mailjet_get_default_list_name()) {
-        return $list->ID;
-      }
-    }
-  }
-  return mailjet_create_default_list($mailjet);
+  $getlist_params = array(
+        'method' => 'GET',
+        'Name' => mailjet_get_default_list_name()
+    );
+    $mailjet->resetRequest();
+    // Gets Mailjet contact list by name
+    $contactLists = $mailjet->contactslist($getlist_params)->getResponse();
+	if ($contactLists && $contactLists->Count > 0) {
+		$def_list_id = $contactLists->Data[0]->ID;
+	}
+	return empty($def_list_id) ? mailjet_create_default_list($mailjet) : $def_list_id;
 }
 
 function mailjet_get_default_list_name()

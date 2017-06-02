@@ -85,23 +85,6 @@ function mailjet_event_save($mailjet_event) {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter().
- */
-function mailjet_event_form_mailjet_api_form_alter(&$form, &$form_state, $form_id) {
-
-  $form['event'] = array(
-  	'#type' => 'fieldset',
-    '#title' => t('Event Callback URL'),
-  );
-  $form['event']['event_url'] = array(
-  	'#type' => 'markup',
-    '#markup' => url('mailjetevent', array('absolute' => TRUE)),
-  );
-  variable_set("mj_callback_url", url('mailjetevent', array('absolute' => TRUE)));
-
-}
-
-/**
  * Callback for handling MailJet API calls
  */
 function mailjet_event_callback() {
