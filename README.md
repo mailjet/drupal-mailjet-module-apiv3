@@ -141,7 +141,9 @@ plugins@mailjet.com
 Changelog
 ---------
 
-= 7.x-2.14 26 May 2017 =
+= 7.x-2.14 1 June 2017 =
+* Bug fix: Messages improved
+* Bug fix: Validate add domain field
 * Bug fix: Unable to synchronize a new user if the Drupal contact list already exists
 
 = 7.x-2.13 6 Mar 2017 =
