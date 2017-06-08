@@ -166,13 +166,6 @@ function mailjet_admin_settings_form()
                 '#default_value' => $user_infos['AddressCity'],
                 '#required' => TRUE
             );
-            
-            $form['infos']['address_province_state'] = array(
-                '#type' => 'textfield',
-                '#title' => t('Province / State'),
-                '#default_value' => $user_infos['AddressProvinceState'],
-                '#required' => FALSE
-            );
 
             $form['infos']['address_postal_code'] = array(
                 '#type' => 'textfield',
