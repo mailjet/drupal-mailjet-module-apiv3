@@ -1,8 +1,13 @@
 <?php
 
-/**
- * Implements hook_rules_event_info().
+ /**
+ * @file
+ * Defines default rules configuration for MailJet events.
  */
+
+/**
+  * Implements hook_rules_event_info().
+  */
 function mailjet_event_rules_event_info() {
   $event = array();
 

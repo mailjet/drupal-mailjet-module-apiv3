@@ -6,14 +6,14 @@
 function mailjet_campaign_menu() {
   $items = array();
 
-  $items['admin/mailjet/campaign'] = array(
+  $items['admin/config/system/mailjet/mailjet-panel/campaign'] = array(
     'title' => 'Campaigns',
     'page callback' => 'mailjet_campaign_iframe',
     'access arguments' => array('administer mailjet module'),
-    'description' => t('Click here to access the Mailjet drag-and-drop newsletter tool, templates and more for your marketing campaigns'),
+    'description' => 'Click here to access the Mailjet drag-and-drop newsletter tool, templates and more for your marketing campaigns',
     'file path' => drupal_get_path('module', 'mailjet_campaign'),
     'file' => 'includes/mailjet_campaign.iframes.inc',
-    'type' => MENU_NORMAL_ITEM,
+    'type' => MENU_LOCAL_ACTION,
     'weight' => 2,
   );
 
@@ -76,7 +76,6 @@ function mailjet_campaign_entity_info() {
   return $data;
 }
 
-
 /**
  * Determines whether the given user has access to a Mailjet campaign.
  *
@@ -101,11 +100,11 @@ function mailjet_campaign_access($op, $mailjet_campaign = NULL, $account = NULL)
 function mailjet_campaign_load($campaign_id) {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'mailjet_campaign')
-  ->propertyCondition('campaign_id', $campaign_id);
+      ->propertyCondition('campaign_id', $campaign_id);
   $result = $query->execute();
   $return = array();
   if (!empty($result['mailjet_campaign'])) {
-    foreach($result['mailjet_campaign'] as $campaign) {
+    foreach ($result['mailjet_campaign'] as $campaign) {
       $return[] = entity_load_single('mailjet_campaign', $campaign->campaign_id);
     }
   }
@@ -117,7 +116,7 @@ function mailjet_campaign_load($campaign_id) {
  */
 function mailjet_campaign_new($campaign_id = '') {
   return entity_get_controller('mailjet_campaign')->create(array(
-  	'campaign_id' => !empty($campaign_id) ? $campaign_id : '',
+        'campaign_id' => !empty($campaign_id) ? $campaign_id : '',
   ));
 }
 
@@ -133,27 +132,27 @@ function mailjet_campaign_save($campaign) {
  */
 function _mailjet_campaign_alter_callback() {
   watchdog('mailjet', json_encode($_POST));
-  watchdog('mailjet', print_r($_POST,true));
+  watchdog('mailjet', print_r($_POST, TRUE));
   $html = '';
   $mj = mailjet_new();
 
-	if (isset($_POST['data'])) {
-		$data = (object) $_POST['data'];
-	}
-	else if (isset($_POST['mailjet'])) {
-		$mailjet = json_decode($_POST['mailjet']);
-		$data = $mailjet->data;
-	}
+  if (isset($_POST['data'])) {
+    $data = (object) $_POST['data'];
+  }
+  elseif (isset($_POST['mailjet'])) {
+    $mailjet = json_decode($_POST['mailjet']);
+    $data = $mailjet->data;
+  }
 
   // Get request response.
-  if(isset($_POST['response'])) {
+  if (isset($_POST['response'])) {
     $response = (object) $_POST['response'];
   }
 
-  if($response->message == 'last change of campaigns parameters') {
+  if ($response->message == 'last change of campaigns parameters') {
 
     // Get the HTML for the email template.
-    $res = $mj->data('newsletter', $data->campaign_id, 'HTML', 'text/html', null, 'GET', 'LAST')->getResponse();
+    $res = $mj->data('newsletter', $data->campaign_id, 'HTML', 'text/html', NULL, 'GET', 'LAST')->getResponse();
 
     // Find the body for the email template.
     $html = $res;
@@ -180,10 +179,9 @@ function _mailjet_campaign_alter_callback() {
     }
 
     $res = $mj->data('newsletter', $data->campaign_id, 'HTML', 'text/html', $html, 'PUT', 'LAST')->getResponse();
-
   }
 
-  if($response->message == 'send details saved successfully') {
+  if ($response->message == 'send details saved successfully') {
     $user_infos = mailjet_user_infos();
     $url = 'http://api.mailjet.com/v3/REST/user/' . $user_infos['Email'];
     $result = $mj->generalRequest(FALSE, array(), 'GET', $url);
@@ -213,33 +211,30 @@ function _mailjet_campaign_alter_callback() {
 
 
 
-  if ($data->campaign_id && strpos($data->next_step_url,"summary")!==false) {
+  if ($data->campaign_id && strpos($data->next_step_url, "summary") !== FALSE) {
 
-  	if (
-	    isset($data->block_type)
-	    && $data->block_type
-	    && isset($data->block_content)
-	    && $data->block_content
-	  ) {
-  		$html = $data->block_content;
-  		watchdog('mailjet-danny1', $html);
-  		$html = str_replace("test msg", "new msg", $html);
-  		watchdog('mailjet-danny2', $html);
+    if (
+        isset($data->block_type) && $data->block_type && isset($data->block_content) && $data->block_content
+    ) {
+      $html = $data->block_content;
+      watchdog('mailjet-danny1', $html);
+      $html = str_replace("test msg", "new msg", $html);
+      watchdog('mailjet-danny2', $html);
 
-  		$res = array(
-		    "code" => 1, // necessary for Mailjet's system to proceed
-		    "continue" => true,
-		    "continue_address" => $_POST['data']['next_step_url'],
-		    "block_content" => $html,
-		  );
+      $res = array(
+        "code" => 1, // necessary for Mailjet's system to proceed
+        "continue" => TRUE,
+        "continue_address" => $_POST['data']['next_step_url'],
+        "block_content" => $html,
+      );
 
-		  echo json_encode($res);
-		  drupal_exit();
-	  }
+      echo json_encode($res);
+      drupal_exit();
+    }
   }
   $res = array(
     "code" => 1, // necessary for Mailjet's system to proceed
-    "continue" => true,
+    "continue" => TRUE,
     "continue_address" => $_POST['data']['next_step_url'],
   );
 
@@ -250,9 +245,9 @@ function _mailjet_campaign_alter_callback() {
 /**
  * Get campaign id.
  */
-function getCampaignHTML($id){
+function getCampaignHTML($id) {
   $mj = mailjet_new();
-  $res = $mj->data('newsletter', $id, 'HTML', 'text/html', null, 'GET', 'LAST')->getResponse();
+  $res = $mj->data('newsletter', $id, 'HTML', 'text/html', NULL, 'GET', 'LAST')->getResponse();
 
   $response = $res;
 
@@ -262,7 +257,7 @@ function getCampaignHTML($id){
 /**
  * Update campaign html.
  */
-function updateCampaignHTML($id,$html){
+function updateCampaignHTML($id, $html) {
   $mj = mailjet_new();
   $res = $mj->data('newsletter', $id, 'HTML', 'text/html', $html, 'PUT', 'LAST')->getResponse();
 
