@@ -90,3 +90,4 @@ function mailjet_event_rules_event_info() {
 
   return $event;
 }
+

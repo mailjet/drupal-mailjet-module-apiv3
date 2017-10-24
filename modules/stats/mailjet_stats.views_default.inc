@@ -270,3 +270,4 @@ function mailjet_stats_views_default_views() {
   }
   return $views;
 }
+

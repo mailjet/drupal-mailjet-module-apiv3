@@ -49,3 +49,4 @@ function mailjet_list_entity_property_info() {
 
   return $info;
 }
+

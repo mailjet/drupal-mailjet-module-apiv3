@@ -441,3 +441,4 @@ function mailjet_trigger_examples_views_default_views() {
 
   return $views;
 }
+

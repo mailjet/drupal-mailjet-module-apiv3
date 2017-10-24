@@ -47,4 +47,3 @@ function mailjet_trigger_examples_menu() {
 
   return $items;
 }
-

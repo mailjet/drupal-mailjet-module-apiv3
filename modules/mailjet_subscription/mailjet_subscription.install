@@ -80,4 +80,3 @@ function mailjet_subscription_disable() {
     field_delete_instance($field_data);
   }
 }
-

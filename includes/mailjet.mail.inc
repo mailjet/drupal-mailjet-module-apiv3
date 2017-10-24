@@ -492,10 +492,13 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
     // Try to send e-mail. If it fails, set watchdog entry.
     if (!$mailer->Send()) {
       if (variable_get('mailjet_debug')) {
-        watchdog('mailjet', 'Error sending e-mail from @from to @to : @error_message', array(
-          '@from' => $from,
-          '@to' => $to,
-          '@error_message' => $mailer->ErrorInfo), WATCHDOG_ERROR);
+          watchdog('mailjet',
+             'Error sending e-mail from @from to @to : @error_message',
+             array(
+                '@from' => $from,
+                '@to' => $to,
+                '@error_message' => $mailer->ErrorInfo),
+            WATCHDOG_ERROR);
       }
       return FALSE;
     }
@@ -605,6 +608,4 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
 
     return $substring;
   }
-
-}
-
+  
