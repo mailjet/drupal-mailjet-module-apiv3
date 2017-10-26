@@ -6,7 +6,7 @@
 
 /**
  * Regisration iframe block code.
-  */
+ */
 function mailjet_register_iframe() {
   global $base_url;
   global $language;
@@ -40,7 +40,12 @@ function mailjet_plans_iframe() {
 
     global $language;
 
-    $lang_codes_map = array('en' => 'en_US', 'fr' => 'fr_FR', 'de' => 'de_DE', 'es' => 'es_ES');
+    $lang_codes_map = [
+      'en' => 'en_US',
+      'fr' => 'fr_FR',
+      'de' => 'de_DE',
+      'es' => 'es_ES',
+    ];
     $default_lang = 'en';
     $locale = isset($lang_codes_map[$language->language]) ? $lang_codes_map[$language->language] : $lang_codes_map[$default_lang];
 
