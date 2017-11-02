@@ -70,7 +70,7 @@ function mailjet_subscription_labels_form($form, &$form_state) {
 
   if (isset($_GET['entity_id']) && !empty($_GET['entity_id'])) {
     $form_id = $_GET['entity_id'];
-    $wrapper = entity_metadata_wrapper('signup_units_data', signup_load($form_id));
+    $wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_id));
 
     $fields_list = $wrapper->signup_fields_form->value();
     $fields_list = explode(',', $fields_list);
@@ -89,7 +89,6 @@ function mailjet_subscription_labels_form($form, &$form_state) {
     $form['signup_label_email'] = array(
       '#type' => 'textfield',
       '#title' => t('Label for <b> Email </b> field'),
-      '#required' => 'TRUE',
       '#description' => 'Please enter a field name that matches the machinal name of field in your Mailjet profile: <b> email address </b>',
       '#default_value' => variable_get('signup_label_email' . '_' . $form_id),
     );
@@ -117,7 +116,7 @@ function mailjet_subscription_labels_form($form, &$form_state) {
  */
 function mailjet_subscription_label_edit_form($form, &$form_state) {
 
-  $wrapper = entity_metadata_wrapper('signup_units_data', signup_load($form_state['values']['status_id']));
+  $wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_state['values']['status_id']));
 
   $fields_list = $wrapper->signup_fields_form->value();
   $fields_list = explode(',', $fields_list);
@@ -152,9 +151,9 @@ function mailjet_subscription_form($form, &$form_state) {
     $form_id = $_GET['entity_id'];
     $status = 'edit';
 
-    $wrapper = entity_metadata_wrapper('signup_units_data', signup_load($form_id));
+    $wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_id));
 
-    $title = signup_load($form_id)->title;
+    $title =  mailjet_subscription_load($form_id)->title;
 
     $description = $wrapper->signup_description->value();
     $submit_label = $wrapper->signup_submit_label2->value();
@@ -475,14 +474,14 @@ function mailjet_subscription_form_submit($form, &$form_state) {
   $time = time();
 
   if ($form_state['values']['status_form'] == 'new') {
-    $signup_form = signup_new();
+    $signup_form = mailjet_subscription_new();
     $signup_form->title = $title;
     $signup_form->created = $time;
     $signup_form->updated = $time;
     $signup_form->type = 'main'; // set the bundle
   }
   elseif ($form_state['values']['status_form'] == 'edit') {
-    $signup_form = signup_load($form_state['values']['status_id']);
+    $signup_form =  mailjet_subscription_load($form_state['values']['status_id']);
     $signup_form->updated = $time;
     $signup_form->title = $title;
   }
@@ -506,7 +505,7 @@ function mailjet_subscription_block_form($form, &$form_state, $form_id) {
 
   mailjet_get_properties();
   global $user;
-  $form_wrapper = entity_metadata_wrapper('signup_units_data', signup_load($form_id));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_id));
   $is_un_subs = 0;
   $mailjet = mailjet_new();
   $description_field = '';
@@ -608,7 +607,7 @@ function mailjet_subscription_block_form($form, &$form_state, $form_id) {
 function mailjet_subscription_submit_validate_form($form, &$form_state) {
   $fields = array();
   $form_id = $form_state['values']['signup_id_form'];
-  $form_wrapper = entity_metadata_wrapper('signup_units_data', signup_load($form_id));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_id));
 
   if (!empty($form_wrapper->signup_fields_form->value())) {
     $fields = explode(",", $form_wrapper->signup_fields_form->value());
@@ -656,7 +655,7 @@ function mailjet_subscription_unsubscribe_account($form, &$form_state) {
   global $user, $base_url;
   $mailjet = mailjet_new();
 
-  $form_wrapper = entity_metadata_wrapper('signup_units_data', signup_load($form_state['values']['signup_id_form']));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_state['values']['signup_id_form']));
 
   $unsub_params = array(
     'method' => 'POST',
@@ -698,7 +697,7 @@ function mailjet_subscription_submit_subscribe($form, &$form_state) {
     return FALSE;
   }
 
-  $form_wrapper = entity_metadata_wrapper('signup_units_data', signup_load($form_hidden_id));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_hidden_id));
   $mailjet = mailjet_new();
 
   $add_params = array(
@@ -732,7 +731,7 @@ function mailjet_subscription_submit_suscribe_form($form, &$form_state) {
   $form_hidden_id = $form_state['values']['signup_id_form'];
   $email = $form_state['values']['signup-email'];
 
-  $form_wrapper = entity_metadata_wrapper('signup_units_data', signup_load($form_hidden_id));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_hidden_id));
   $email_text_button = !empty($form_wrapper->signup_email_text_button->value()) ? $form_wrapper->signup_email_text_button->value() : 'Click here to confirm';
   $email_description = !empty($form_wrapper->signup_email_text_description->value()) ? $form_wrapper->signup_email_text_description->value() : 'You may copy/paste this link into your browser:';
   $email_footer = !empty($form_wrapper->signup_email_text_thank_you->value()) ? $form_wrapper->signup_email_text_thank_you->value() : t('Thanks,');
@@ -909,7 +908,7 @@ function mailjet_subscription_block_info() {
     $counter++;
   }
 
-  $signup_forms = signup_load_multiple($signup_forms_array);
+  $signup_forms =  mailjet_subscription_load_multiple($signup_forms_array);
   foreach ($signup_forms as $form) {
     $blocks['signup_form' . $form->id] = array(
       // info: The name of the block.
@@ -941,7 +940,7 @@ function mailjet_subscription_block_view($delta = '') {
     $signup_forms_array[$counter] = $record->id;
     $counter++;
   }
-  $signup_forms = signup_load_multiple($signup_forms_array);
+  $signup_forms =  mailjet_subscription_load_multiple($signup_forms_array);
   foreach ($signup_forms as $form) {
     // The $delta parameter tells us which block is being requested.
     switch ($delta) {
@@ -952,7 +951,7 @@ function mailjet_subscription_block_view($delta = '') {
         $block['subject'] = $form->title;
 
         // $block['content'] = drupal_get_form('mailjet_subscription_block_form', $form->id);
-        $wrapper = entity_metadata_wrapper('signup_units_data', signup_load($form->id));
+        $wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form->id));
 
         $a = drupal_get_form('mailjet_subscription_block_form', $form->id);
         $block['content'] = array(
@@ -1064,7 +1063,7 @@ function mailjet_subscription_entity_info() {
     'module' => 'mailjet_subscription',
     'metadata controller class' => 'SignupFormMetadataController', // entity controller class extension in which properties can be created.
     'views controller class' => 'EntityDefaultViewsController',
-    'load hook' => 'signup_load', //custom entity load function, which is described below
+    'load hook' => ' mailjet_subscription_load', //custom entity load function, which is described below
   );
 
   return $services;
@@ -1073,18 +1072,18 @@ function mailjet_subscription_entity_info() {
 /**
  * Loads a Signup block form by ID.
  */
-function signup_load($signup_id) {
+function  mailjet_subscription_load($signup_id) {
   if (empty($signup_id)) {
     return FALSE;
   }
-  $signup_forms = signup_load_multiple(array($signup_id), array());
+  $signup_forms =  mailjet_subscription_load_multiple(array($signup_id), array());
   return $signup_forms ? reset($signup_forms) : FALSE;
 }
 
 /**
  * Loads multiple forms by ID or based on a set of matching conditions.
  */
-function signup_load_multiple($signup_ids = array(), $conditions = array(), $reset = FALSE) {
+function  mailjet_subscription_load_multiple($signup_ids = array(), $conditions = array(), $reset = FALSE) {
   if (empty($signup_ids) && empty($conditions)) {
     return array();
   }
@@ -1094,7 +1093,7 @@ function signup_load_multiple($signup_ids = array(), $conditions = array(), $res
 /**
  * Returns an initialized  object. Used to create an entity of type signup_units_data.
  */
-function signup_new() {
+function mailjet_subscription_new() {
   return entity_get_controller('signup_units_data')->create();
 }
 

@@ -64,7 +64,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       if (function_exists('libraries_load')) {
         $library = libraries_load('phpmailer');
         if (empty($library) || empty($library['loaded'])) {
-          watchdog('mailjet', 'Unable to send mail : Libraries API can not load PHPMailer library.', [], WATCHDOG_ERROR);
+          watchdog('mailjet', 'Unable to send mail : Libraries API can not load PHPMailer library.', array(), WATCHDOG_ERROR);
           drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
           return FALSE;
         }
@@ -75,7 +75,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       }
       else {
         drupal_set_message(t('Unable to send mail : PHPMailer library does not exist.'), 'error');
-        watchdog('mailjet', 'Unable to send mail : Libraries API and PHPMailer library does not exist .', [], WATCHDOG_ERROR);
+        watchdog('mailjet', 'Unable to send mail : Libraries API and PHPMailer library does not exist .', array(), WATCHDOG_ERROR);
         return FALSE;
       }
     }
@@ -109,7 +109,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
           drupal_set_message(t('There is no submitted from address.'), 'error');
 
           if (variable_get('mailjet_debug')) {
-            watchdog('mailjet', 'There is no submitted from address.', [], WATCHDOG_ERROR);
+            watchdog('mailjet', 'There is no submitted from address.', array(), WATCHDOG_ERROR);
           }
 
           return FALSE;
@@ -124,10 +124,10 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       $from = preg_replace("/(.*)\<(.*)\>/i", '$2', $from);
     }
     elseif (!valid_email_address($from)) {
-      drupal_set_message(t('The submitted from address (@from) is not valid.', ['@from' => $from]), 'error');
+      drupal_set_message(t('The submitted from address (@from) is not valid.', array('@from' => $from)), 'error');
 
       if (variable_get('mailjet_debug')) {
-        watchdog('mailjet', 'The submitted from address (@from) is not valid.', ['@from' => $from], WATCHDOG_ERROR);
+        watchdog('mailjet', 'The submitted from address (@from) is not valid.', array('@from' => $from), WATCHDOG_ERROR);
       }
 
       return FALSE;
@@ -231,7 +231,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
               drupal_set_message(t('The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.'), 'error');
 
               if (variable_get('mailjet_debug')) {
-                watchdog('mailjet', 'The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.', [], WATCHDOG_ERROR);
+                watchdog('mailjet', 'The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.', array(), WATCHDOG_ERROR);
               }
 
               // Force the Content-Type to be text/plain.
@@ -486,20 +486,19 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
     $mailer->Mailer = 'smtp';
 
     if (variable_get('mailjet_debug')) {
-      watchdog('mailjet', 'Sending mail to: @to', ['@to' => $to]);
+      watchdog('mailjet', 'Sending mail to: @to', array('@to' => $to));
     }
 
     // Try to send e-mail. If it fails, set watchdog entry.
     if (!$mailer->Send()) {
       if (variable_get('mailjet_debug')) {
-        watchdog('mailjet',
-          'Error sending e-mail from @from to @to : @error_message',
-          [
-            '@from' => $from,
-            '@to' => $to,
-            '@error_message' => $mailer->ErrorInfo
-          ],
-          WATCHDOG_ERROR);
+          watchdog('mailjet',
+             'Error sending e-mail from @from to @to : @error_message',
+             array(
+                '@from' => $from,
+                '@to' => $to,
+                '@error_message' => $mailer->ErrorInfo),
+            WATCHDOG_ERROR);
       }
       return FALSE;
     }
@@ -525,7 +524,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
    *   An array containing the resulting mime parts
    */
   protected function boundarySplit($input, $boundary) {
-    $parts = [];
+    $parts = array();
     $bs_possible = drupal_substr($boundary, 2, -2);
     $bs_check = '\"' . $bs_possible . '\"';
 
@@ -609,5 +608,5 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
 
     return $substring;
   }
-
 }
+  
