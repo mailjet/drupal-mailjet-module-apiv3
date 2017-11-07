@@ -46,6 +46,7 @@ function mailjet_subscription_menu() {
     'title' => 'Edit Labels of subscription forms',
     'access arguments' => array('administer mailjet module'),
     'type' => MENU_CALLBACK,
+    'tab_parent' => '/admin/config/system/mailjet/signup-setttings',
     'weight' => 0,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mailjet_subscription_labels_form'),
@@ -70,19 +71,21 @@ function mailjet_subscription_labels_form($form, &$form_state) {
 
   if (isset($_GET['entity_id']) && !empty($_GET['entity_id'])) {
     $form_id = $_GET['entity_id'];
-    $wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_id));
+    $wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_id));
 
     $fields_list = $wrapper->signup_fields_form->value();
     $fields_list = explode(',', $fields_list);
 
-    foreach ($fields_list as $key => $value) {
-      if ($value !== '0') {
-        $form['signup_label' . $value] = array(
-          '#type' => 'textfield',
-          '#title' => t('Label for Mailjet field <b>' . $value . '</b>'),
-          '#description' => 'Please enter a field name that matches the machinal name of field in your Mailjet profile: <b>' . $value . '</b>',
-          '#default_value' => variable_get('signup_label' . $value . '_' . $form_id),
-        );
+    if (!empty($fields_list[0])) {
+      foreach ($fields_list as $key => $value) {
+        if ($value !== '0') {
+          $form['signup_label' . $value] = array(
+            '#type' => 'textfield',
+            '#title' => t('Label for Mailjet field <b>' . $value . '</b>'),
+            '#description' => 'Please enter a field name that matches the machinal name of field in your Mailjet profile: <b>' . $value . '</b>',
+            '#default_value' => variable_get('signup_label' . $value . '_' . $form_id),
+          );
+        }
       }
     }
 
@@ -112,19 +115,22 @@ function mailjet_subscription_labels_form($form, &$form_state) {
 }
 
 /**
- * 
+ *
  */
 function mailjet_subscription_label_edit_form($form, &$form_state) {
 
-  $wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_state['values']['status_id']));
+  $wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_state['values']['status_id']));
 
   $fields_list = $wrapper->signup_fields_form->value();
   $fields_list = explode(',', $fields_list);
   $status_success = FALSE;
 
-  foreach ($fields_list as $key => $value) {
-    if ($value !== '0') {
-      variable_set('signup_label' . $value . '_' . $form_state['values']['status_id'], $form_state['values']['signup_label' . $value]);
+  if (!empty($fields_list[0])) {
+    foreach ($fields_list as $key => $value) {
+      if ($value !== '0') {
+        $status_success = TRUE;
+        variable_set('signup_label' . $value . '_' . $form_state['values']['status_id'], $form_state['values']['signup_label' . $value]);
+      }
     }
   }
 
@@ -134,7 +140,7 @@ function mailjet_subscription_label_edit_form($form, &$form_state) {
   }
 
   if ($status_success == TRUE) {
-    drupal_set_message(t('Successfully save your subscription settings.'));
+    drupal_set_message(t('Subscription form labels saved successfully.'));
   }
 }
 
@@ -151,9 +157,9 @@ function mailjet_subscription_form($form, &$form_state) {
     $form_id = $_GET['entity_id'];
     $status = 'edit';
 
-    $wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_id));
+    $wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_id));
 
-    $title =  mailjet_subscription_load($form_id)->title;
+    $title = mailjet_subscription_load($form_id)->title;
 
     $description = $wrapper->signup_description->value();
     $submit_label = $wrapper->signup_submit_label2->value();
@@ -271,7 +277,7 @@ function mailjet_subscription_form($form, &$form_state) {
   $form['form_settings']['error_missmatch'] = array(
     '#type' => 'textfield',
     '#title' => t('Data type mismatch error'),
-    '#description' => 'Incorrect %type values. Please enter the correct values according to the example of the description in the field:  <  %id  > -> The \'%id\' symbol will be replaced by the name of property and the \'%type\' symbol replace a type of data in property/field. ',
+    '#description' => 'Incorrect data format. Please enter the correct values according to the example of the description in the field:  <  %id  > -> The \'%id\' symbol will be replaced by the name of property. ',
     '#default_value' => (isset($missmatch_data_type) && !empty($missmatch_data_type)) ? $missmatch_data_type : '',
   );
 
@@ -447,7 +453,7 @@ function mailjet_subscription_form_submit($form, &$form_state) {
   }
 
   if (count($ml_fields_array) > 3) {
-    form_set_error('ml_fields', t('Please note that currently you may have a maximum of 3 contact properties in your subscribe form block. Reduce your selected contact properties.'));
+    form_set_error('ml_fields', t('You may select a maximum of 3 contact properties in your subscription form. Please update your selection and save the form again.'));
     return;
   }
   //$doublein = $form_state['values']['doublein'];
@@ -481,7 +487,7 @@ function mailjet_subscription_form_submit($form, &$form_state) {
     $signup_form->type = 'main'; // set the bundle
   }
   elseif ($form_state['values']['status_form'] == 'edit') {
-    $signup_form =  mailjet_subscription_load($form_state['values']['status_id']);
+    $signup_form = mailjet_subscription_load($form_state['values']['status_id']);
     $signup_form->updated = $time;
     $signup_form->title = $title;
   }
@@ -489,7 +495,7 @@ function mailjet_subscription_form_submit($form, &$form_state) {
   $status_save = mailjet_subscription_create_signup_form($signup_form, $title, $description, $field_confirmation_message, $confirmation_email_text, $submit_button, $destination, $error_token, $subscribe_error, $field_subscribe_error_exist, $field_subscribe_success, $doublein, $ml_lists, $ml_fields_array, $field_css, $field_js, $email_text_button, $email_text_description, $email_text_thank_you, $email_owner, $missmatch_data_types, $footer_description);
 
   if ($status_save != FALSE) {
-    drupal_set_message(t('The subscription form has been submitted successfully!'));
+    drupal_set_message(t('Subscription form saved successfully!'));
   }
   else {
     drupal_set_message(t('The subscription form hasn\'t been created! Error! Try again later.'));
@@ -498,14 +504,14 @@ function mailjet_subscription_form_submit($form, &$form_state) {
 
 /**
  * Implement hook_form()
- * 
+ *
  * Create signup block content for subscribe to Mailjet
  */
 function mailjet_subscription_block_form($form, &$form_state, $form_id) {
 
   mailjet_get_properties();
   global $user;
-  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_id));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_id));
   $is_un_subs = 0;
   $mailjet = mailjet_new();
   $description_field = '';
@@ -607,7 +613,7 @@ function mailjet_subscription_block_form($form, &$form_state, $form_id) {
 function mailjet_subscription_submit_validate_form($form, &$form_state) {
   $fields = array();
   $form_id = $form_state['values']['signup_id_form'];
-  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_id));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_id));
 
   if (!empty($form_wrapper->signup_fields_form->value())) {
     $fields = explode(",", $form_wrapper->signup_fields_form->value());
@@ -616,7 +622,7 @@ function mailjet_subscription_submit_validate_form($form, &$form_state) {
   foreach ($fields as $field) {
     $field_value = $form_state['values']['singup-' . $field];
 
-    $missmatch_values = !empty($form_wrapper->signup_missmatch_error_field->value()) ? $form_wrapper->signup_missmatch_error_field->value() : 'Incorrect %type values. Please enter the correct values according to the example of the description in the field:  <  %id  >';
+    $missmatch_values = !empty($form_wrapper->signup_missmatch_error_field->value()) ? $form_wrapper->signup_missmatch_error_field->value() : 'Incorrect data format. Please enter the correct values according to the example of the description in the field:  <  %id  >';
     $missmatch_values = str_replace("%id", variable_get('signup_label' . $field . '_' . $form_id), $missmatch_values);
 
     switch (mailjet_get_propertiy_name($field)) {
@@ -655,7 +661,7 @@ function mailjet_subscription_unsubscribe_account($form, &$form_state) {
   global $user, $base_url;
   $mailjet = mailjet_new();
 
-  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_state['values']['signup_id_form']));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_state['values']['signup_id_form']));
 
   $unsub_params = array(
     'method' => 'POST',
@@ -697,7 +703,7 @@ function mailjet_subscription_submit_subscribe($form, &$form_state) {
     return FALSE;
   }
 
-  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_hidden_id));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_hidden_id));
   $mailjet = mailjet_new();
 
   $add_params = array(
@@ -715,7 +721,7 @@ function mailjet_subscription_submit_subscribe($form, &$form_state) {
       drupal_set_message(t($form_wrapper->signup_succesfull_subscribe->value()));
     }
     else {
-      drupal_set_message(t('You have successfully subscribed to Mailjet contact list! Thank you!'));
+      drupal_set_message(t('You have subscribed successfully! Thank you!'));
     }
   }
 
@@ -731,7 +737,7 @@ function mailjet_subscription_submit_suscribe_form($form, &$form_state) {
   $form_hidden_id = $form_state['values']['signup_id_form'];
   $email = $form_state['values']['signup-email'];
 
-  $form_wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form_hidden_id));
+  $form_wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_hidden_id));
   $email_text_button = !empty($form_wrapper->signup_email_text_button->value()) ? $form_wrapper->signup_email_text_button->value() : 'Click here to confirm';
   $email_description = !empty($form_wrapper->signup_email_text_description->value()) ? $form_wrapper->signup_email_text_description->value() : 'You may copy/paste this link into your browser:';
   $email_footer = !empty($form_wrapper->signup_email_text_thank_you->value()) ? $form_wrapper->signup_email_text_thank_you->value() : t('Thanks,');
@@ -821,7 +827,7 @@ function mailjet_subscription_submit_suscribe_form($form, &$form_state) {
           drupal_set_message(t($confirmation_message), 'status');
         }
         else {
-          drupal_set_message(t('Subscription confirmation email sent to' . $form_state['values']['signup-email'] . '.Please check your inbox and confirm the subscription.'));
+          drupal_set_message(t('Subscription confirmation email sent to ' . $form_state['values']['signup-email'] . '. Please check your inbox and confirm the subscription.'));
         }
       }
     }
@@ -896,9 +902,9 @@ function mailjet_subscription_block_info() {
   $blocks = array();
   $signup_forms_array = array();
   $query_signup_forms = db_select('signup_units_data', 'units')
-      ->condition('units.id', 0, '>')
-      ->fields('units', array('id'))
-      ->orderBy('units.created', 'ASC');
+    ->condition('units.id', 0, '>')
+    ->fields('units', array('id'))
+    ->orderBy('units.created', 'ASC');
 
   $result = $query_signup_forms->execute();
   $counter = 0;
@@ -908,7 +914,7 @@ function mailjet_subscription_block_info() {
     $counter++;
   }
 
-  $signup_forms =  mailjet_subscription_load_multiple($signup_forms_array);
+  $signup_forms = mailjet_subscription_load_multiple($signup_forms_array);
   foreach ($signup_forms as $form) {
     $blocks['signup_form' . $form->id] = array(
       // info: The name of the block.
@@ -929,9 +935,9 @@ function mailjet_subscription_block_view($delta = '') {
 
   $signup_forms_array = array();
   $query_signup_forms = db_select('signup_units_data', 'units')
-      ->condition('units.id', 0, '>')
-      ->fields('units', array('id'))
-      ->orderBy('units.created', 'ASC');
+    ->condition('units.id', 0, '>')
+    ->fields('units', array('id'))
+    ->orderBy('units.created', 'ASC');
 
   $result = $query_signup_forms->execute();
   $counter = 0;
@@ -940,7 +946,7 @@ function mailjet_subscription_block_view($delta = '') {
     $signup_forms_array[$counter] = $record->id;
     $counter++;
   }
-  $signup_forms =  mailjet_subscription_load_multiple($signup_forms_array);
+  $signup_forms = mailjet_subscription_load_multiple($signup_forms_array);
   foreach ($signup_forms as $form) {
     // The $delta parameter tells us which block is being requested.
     switch ($delta) {
@@ -951,19 +957,20 @@ function mailjet_subscription_block_view($delta = '') {
         $block['subject'] = $form->title;
 
         // $block['content'] = drupal_get_form('mailjet_subscription_block_form', $form->id);
-        $wrapper = entity_metadata_wrapper('signup_units_data',  mailjet_subscription_load($form->id));
+        $wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form->id));
 
         $a = drupal_get_form('mailjet_subscription_block_form', $form->id);
         $block['content'] = array(
           '#markup' => drupal_render($a),
           '#attached' => array(
             'css' => array(
-              $wrapper->signup_field_css->value() => array('type' => 'inline', 'group' => CSS_THEME, 'scope' => 'header')
+              $wrapper->signup_field_css->value() => array('type' => 'inline', 'group' => CSS_THEME, 'scope' => 'header'),
+              '.block-mailjet-subscription input{ width:95%;}' => array('type' => 'inline', 'group' => CSS_THEME, 'scope' => 'header'),
             ),
             'js' => array(
               htmlspecialchars_decode($wrapper->signup_field_js->value(), ENT_QUOTES) => array('type' => 'inline', 'group' => JS_THEME, 'scope' => 'footer'),
             ),
-        ));
+          ));
 
         break;
     }
@@ -1072,18 +1079,18 @@ function mailjet_subscription_entity_info() {
 /**
  * Loads a Signup block form by ID.
  */
-function  mailjet_subscription_load($signup_id) {
+function mailjet_subscription_load($signup_id) {
   if (empty($signup_id)) {
     return FALSE;
   }
-  $signup_forms =  mailjet_subscription_load_multiple(array($signup_id), array());
+  $signup_forms = mailjet_subscription_load_multiple(array($signup_id), array());
   return $signup_forms ? reset($signup_forms) : FALSE;
 }
 
 /**
  * Loads multiple forms by ID or based on a set of matching conditions.
  */
-function  mailjet_subscription_load_multiple($signup_ids = array(), $conditions = array(), $reset = FALSE) {
+function mailjet_subscription_load_multiple($signup_ids = array(), $conditions = array(), $reset = FALSE) {
   if (empty($signup_ids) && empty($conditions)) {
     return array();
   }

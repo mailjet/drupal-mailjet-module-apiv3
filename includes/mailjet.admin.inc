@@ -314,7 +314,7 @@ function mailjet_admin_settings_form_submit($form, &$form_state) {
     variable_set('mail_headers_allow_html_mailjet', 0);
   }
 
-  drupal_set_message(t('Your settings is saved successfully'));
+  drupal_set_message(t('Mailjet settings saved successfully!'));
 }
 
 /**

@@ -1225,24 +1225,56 @@ function mailjet_theme_registry_alter(&$theme_registry) {
  * Implements hook_menu_breadcrumb_alter().
  */
 function mailjet_menu_breadcrumb_alter(&$active_trail, $item) {
+  global $base_url;
 
   $active_trail = array_merge(array_slice($active_trail, 0, count($active_trail)), array($active_trail[count($active_trail) - 1]));
+
+  if (current_path() == 'admin/config/system/mailjet/mailjet-panel' || current_path() == 'admin/config/system/mailjet/signup-setttings') {
+    $breadcrumb_string = '<div  style="font-size:0.846em;" class="breadcrumb">' . "<a href='" . $base_url . "'>" . t('Home') . "</a>  » ";
+    $len = count($active_trail);
+    $count = 0;
+    foreach ($active_trail as $trail) {
+
+      if ($len - 2 > $count) {
+        if (isset($trail['link_title']) && isset($trail['link_path'])) {
+          $breadcrumb_string .= "<a href='" . $base_url . "/" . $trail['link_path'] . "'>" . $trail['link_title'] . "</a> » ";
+        }
+      }
+
+      if ($len - 1 == $count) {
+        if (isset($trail['link_title']) && isset($trail['link_path'])) {
+          $breadcrumb_string .= "<a href='" . $base_url . "/" . $trail['link_path'] . "'>" . $trail['link_title'] . "</a>  ";
+        }
+      }
+
+      $count++;
+    }
+    $breadcrumb_string .= "</div>";
+    variable_set('overlay_breadcrumb', $breadcrumb_string);
+  }
+  else {
+    variable_del('overlay_breadcrumb');
+  }
 }
 
 /**
  * Implements hook_preprocess(&$variables)
  */
-function mailjet_preprocess(&$variables) {	
+function mailjet_preprocess(&$variables) {
   if (!empty(variable_get('output_links_mailjet2') && empty( $variables['output_links_mailjet']))) {
-      $variables['output_links_mailjet'] = variable_get('output_links_mailjet2');
-   }
+    $variables['output_links_mailjet'] = variable_get('output_links_mailjet2');
+  }
 
   if (!empty(variable_get('signup_forms2') && empty( $variables['signup_forms']) )) {
-      $variables['signup_forms'] = variable_get('signup_forms2');
+    $variables['signup_forms'] = variable_get('signup_forms2');
   }
 
   if (!empty(variable_get('action_links_signup') && empty( $variables['action_links_signup']) )) {
-      $variables['action_links_signup'] = variable_get('action_links_signup');
+    $variables['action_links_signup'] = variable_get('action_links_signup');
+  }
+
+  if (!empty(variable_get('overlay_breadcrumb') && empty($variables['overlay_breadcrumb']))) {
+    $variables['overlay_breadcrumb'] = variable_get('overlay_breadcrumb');
   }
 }
 
