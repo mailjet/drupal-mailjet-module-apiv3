@@ -1,12 +1,13 @@
 <?php
+
 /**
  * @file
  * Mail processing.
  */
-
 class MailjetSmtpMailSystem implements MailSystemInterface {
 
   protected $AllowHtml;
+
   /**
    * Concatenate and wrap the e-mail body for either
    * plain-text or HTML emails.
@@ -21,7 +22,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
     $this->AllowHtml = variable_get('mailjet_allowhtml', TRUE);
     // Join the body array into one string.
     $message['body'] = implode("\n\n", $message['body']);
-    if (! $this->AllowHtml) {
+    if (!$this->AllowHtml) {
       // Convert any HTML to plain-text.
       $message['body'] = drupal_html_to_text($message['body']);
       // Wrap the mail body for sending.
@@ -42,12 +43,12 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
    *   TRUE if the mail was successfully accepted, otherwise FALSE.
    */
   public function mail(array $message) {
-    $id       = $message['id'];
-    $to       = $message['to'];
-    $from     = $message['from'];
-    $subject  = $message['subject'];
-    $body     = $message['body'];
-    $headers  = $message['headers'];
+    $id = $message['id'];
+    $to = $message['to'];
+    $from = $message['from'];
+    $subject = $message['subject'];
+    $body = $message['body'];
+    $headers = $message['headers'];
 
     if (isset($message['params']['subject'])) {
       $subject = $message['params']['subject'];
@@ -57,7 +58,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       $body = $message['params']['body'][0];
     }
 
-    if(!class_exists('PHPMailer')) {
+    if (!class_exists('PHPMailer')) {
       // If the PHPMailer class is not yet auto-loaded, try to load the library
       // using Libraries API, if present.
       if (function_exists('libraries_load')) {
@@ -120,7 +121,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
       // \n.
       // * == Repeats the previous item zero or more times.
       $from_name = preg_replace('/"?([^("\t\n)]*)"?.*$/', '$1', $from);
-      $from      = preg_replace("/(.*)\<(.*)\>/i", '$2', $from);
+      $from = preg_replace("/(.*)\<(.*)\>/i", '$2', $from);
     }
     elseif (!valid_email_address($from)) {
       drupal_set_message(t('The submitted from address (@from) is not valid.', array('@from' => $from)), 'error');
@@ -160,11 +161,11 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
             // If a from value was already given, then set based on header.
             // Should be the most common situation since drupal_mail moves the
             // from to headers.
-            $from           = $value;
-            $mailer->From     = $value;
+            $from = $value;
+            $mailer->From = $value;
             // Then from can be out of sync with from_name !
             $mailer->FromName = '';
-            $mailer->Sender   = $value;
+            $mailer->Sender = $value;
           }
           break;
 
@@ -183,6 +184,10 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
 
           // Set the charset based on the provided value, if there is one.
           $mailer->CharSet = isset($vars['charset']) ? $vars['charset'] : 'utf-8';
+
+          if (variable_get('mail_headers_allow_html_mailjet') !== 0) {
+            $vars[0] = 'text/html';
+          }
 
           switch ($vars[0]) {
             case 'text/plain':
@@ -226,7 +231,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
               drupal_set_message(t('The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.'), 'error');
 
               if (variable_get('mailjet_debug')) {
-                  watchdog('mailjet', 'The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.', array(), WATCHDOG_ERROR);
+                watchdog('mailjet', 'The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.', array(), WATCHDOG_ERROR);
               }
 
               // Force the Content-Type to be text/plain.
@@ -341,7 +346,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
         // Determine if there is an HTML part for when adding the plain
         // text part.
         $text_plain = FALSE;
-        $text_html  = FALSE;
+        $text_html = FALSE;
         foreach ($body_parts as $body_part) {
           if (strpos($body_part, 'text/plain')) {
             $text_plain = TRUE;
@@ -409,10 +414,10 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
           }
           // Add the attachment.
           elseif (strpos($body_part, 'Content-Disposition: attachment;')) {
-            $file_path     = $this->getSubstrings($body_part, 'filename=', '"', '"');
-            $file_name     = $this->getSubstrings($body_part, ' name=', '"', '"');
+            $file_path = $this->getSubstrings($body_part, 'filename=', '"', '"');
+            $file_name = $this->getSubstrings($body_part, ' name=', '"', '"');
             $file_encoding = $this->getSubstrings($body_part, 'Content-Transfer-Encoding', ' ', "\n");
-            $file_type     = $this->getSubstrings($body_part, 'Content-Type', ' ', ';');
+            $file_type = $this->getSubstrings($body_part, 'Content-Type', ' ', ';');
 
             if (file_exists($file_path)) {
               if (!$mailer->AddAttachment($file_path, $file_name, $file_encoding, $filetype)) {
@@ -434,7 +439,7 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
               }
 
               $attachment_new_filename = tempnam(realpath(file_directory_temp()), 'smtp');
-              $file_path               = file_save_data($attachment, $attachment_new_filename, FILE_EXISTS_RENAME);
+              $file_path = file_save_data($attachment, $attachment_new_filename, FILE_EXISTS_RENAME);
 
               if (!$mailer->AddAttachment($file_path, $file_name)) {
                 drupal_set_message(t('Attachment could not be found or accessed.'));
@@ -476,27 +481,29 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
 
     // Set other connection settings.
     //$mailer->Host   = variable_get('mailjet_host', 'pp-leela1.mailjet.com');
-    $mailer->Host   = variable_get('mailjet_host', 'in-v3.mailjet.com');
-    $mailer->Port   = variable_get('mailjet_port', '587');
+    $mailer->Host = variable_get('mailjet_host', 'in-v3.mailjet.com');
+    $mailer->Port = variable_get('mailjet_port', '587');
     $mailer->Mailer = 'smtp';
 
     if (variable_get('mailjet_debug')) {
-        watchdog('mailjet', 'Sending mail to: @to', array('@to' => $to));
+      watchdog('mailjet', 'Sending mail to: @to', array('@to' => $to));
     }
 
     // Try to send e-mail. If it fails, set watchdog entry.
     if (!$mailer->Send()) {
       if (variable_get('mailjet_debug')) {
           watchdog('mailjet',
-                   'Error sending e-mail from @from to @to : @error_message',
-                   array(
-                     '@from' => $from,
-                     '@to' => $to,
-                     '@error_message' => $mailer->ErrorInfo),
-                   WATCHDOG_ERROR);
+             'Error sending e-mail from @from to @to : @error_message',
+             array(
+                '@from' => $from,
+                '@to' => $to,
+                '@error_message' => $mailer->ErrorInfo),
+            WATCHDOG_ERROR);
       }
       return FALSE;
     }
+
+    watchdog('mailjet', t('The new email is sent to:') . $to);
 
     $mailer->SmtpClose();
     return TRUE;
@@ -517,9 +524,9 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
    *   An array containing the resulting mime parts
    */
   protected function boundarySplit($input, $boundary) {
-    $parts       = array();
+    $parts = array();
     $bs_possible = drupal_substr($boundary, 2, -2);
-    $bs_check    = '\"' . $bs_possible . '\"';
+    $bs_check = '\"' . $bs_possible . '\"';
 
     if ($boundary == $bs_check) {
       $boundary = $bs_possible;
@@ -551,9 +558,9 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
     if (strpos($part_array[0], 'Content') !== FALSE) {
       if (strpos($part_array[1], 'Content') !== FALSE) {
         if (strpos($part_array[2], 'Content') !== FALSE) {
-            array_shift($part_array);
-            array_shift($part_array);
-            array_shift($part_array);
+          array_shift($part_array);
+          array_shift($part_array);
+          array_shift($part_array);
         }
         else {
           array_shift($part_array);
@@ -589,11 +596,11 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
    *   $ending_character.
    */
   protected function getSubstrings($source, $target, $beginning_character, $ending_character) {
-    $search_start     = strpos($source, $target) + 1;
-    $first_character  = strpos($source, $beginning_character, $search_start) + 1;
+    $search_start = strpos($source, $target) + 1;
+    $first_character = strpos($source, $beginning_character, $search_start) + 1;
     $second_character = strpos($source, $ending_character, $first_character) + 1;
-    $substring        = drupal_substr($source, $first_character, $second_character - $first_character);
-    $string_length    = drupal_strlen($substring) - 1;
+    $substring = drupal_substr($source, $first_character, $second_character - $first_character);
+    $string_length = drupal_strlen($substring) - 1;
 
     if ($substring[$string_length] == $ending_character) {
       $substring = drupal_substr($substring, 0, $string_length);
@@ -602,3 +609,4 @@ class MailjetSmtpMailSystem implements MailSystemInterface {
     return $substring;
   }
 }
+  

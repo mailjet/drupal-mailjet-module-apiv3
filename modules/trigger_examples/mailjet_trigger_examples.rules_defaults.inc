@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Defines default rule examples for MailJet Trigger Examples.

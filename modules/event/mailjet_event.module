@@ -56,7 +56,6 @@ function mailjet_event_entity_info() {
   return $data;
 }
 
-
 function mailjet_event_access($op, $mailjet_campaign = NULL, $account = NULL) {
   if (user_access('administer mailjet module', $account)) {
     return TRUE;
@@ -69,7 +68,7 @@ function mailjet_event_access($op, $mailjet_campaign = NULL, $account = NULL) {
  */
 function mailjet_event_new($mailjet_user, $event) {
   $values = array(
-  	'id' => NULL,
+    'id' => NULL,
     'uid' => $mailjet_user->uid,
     'event' => $event,
   );
@@ -82,6 +81,22 @@ function mailjet_event_new($mailjet_user, $event) {
  */
 function mailjet_event_save($mailjet_event) {
   return entity_save('mailjet_event', $mailjet_event);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mailjet_event_form_mailjet_api_form_alter(&$form, &$form_state, $form_id) {
+
+  $form['event'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Event Callback URL'),
+  );
+  $form['event']['event_url'] = array(
+    '#type' => 'markup',
+    '#markup' => url('mailjetevent', array('absolute' => TRUE)),
+  );
+  variable_set("mj_callback_url", url('mailjetevent', array('absolute' => TRUE)));
 }
 
 /**
@@ -233,23 +248,23 @@ function mailjet_event_error_options() {
  */
 function mailjet_event_get_properties($data, array $options, $name) {
   switch ($name) {
-  	case 'error':
-  	  if (isset($data->event['error_related_to']) && isset($data->event['error'])) {
-  	    return $data->event['error_related_to'] . '|' . $data->event['error'];
-  	  }
-  	  else {
-  	    return NULL;
-  	  }
-  	  break;
+    case 'error':
+      if (isset($data->event['error_related_to']) && isset($data->event['error'])) {
+        return $data->event['error_related_to'] . '|' . $data->event['error'];
+      }
+      else {
+        return NULL;
+      }
+      break;
 
-	  case 'error_message':
-	    if (isset($data->event['error_related_to']) && isset($data->event['error'])) {
-	      $mailjet_errors = mailjet_event_error_list();
-	      return $mailjet_errors[$data->event['error_related_to'] . '|' . $data->event['error']]['description'];
-	    }
-	    else {
-	      return NULL;
-	    }
-	    break;
+    case 'error_message':
+      if (isset($data->event['error_related_to']) && isset($data->event['error'])) {
+        $mailjet_errors = mailjet_event_error_list();
+        return $mailjet_errors[$data->event['error_related_to'] . '|' . $data->event['error']]['description'];
+      }
+      else {
+        return NULL;
+      }
+      break;
   }
 }
