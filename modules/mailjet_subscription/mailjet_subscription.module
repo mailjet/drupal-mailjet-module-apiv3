@@ -25,11 +25,9 @@ function mailjet_subscription_menu() {
   $items['admin/config/system/mailjet/signup-setttings'] = array(
     'title' => 'Subscription settings',
     'description' => 'Manage subscription settings here',
-    'page callback' => 'system_admin_menu_block_page',
+    'page callback' => 'mailjet_subscription_signup_setttings',
     'access arguments' => array('access administration pages'),
     'type' => MENU_LOCAL_TASK,
-    'file path' => drupal_get_path('module', 'system'),
-    'file' => 'system.admin.inc',
   );
 
   $items['admin/config/system/mailjet/signup-setttings/add-form'] = array(
@@ -45,7 +43,7 @@ function mailjet_subscription_menu() {
   $items['admin/config/system/mailjet/signup-setttings/edit-labels'] = array(
     'title' => 'Edit Labels of subscription forms',
     'access arguments' => array('administer mailjet module'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
     'tab_parent' => '/admin/config/system/mailjet/signup-setttings',
     'weight' => 0,
     'page callback' => 'drupal_get_form',
@@ -61,6 +59,44 @@ function mailjet_subscription_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Page calback for subscription forms.
+ */
+
+function mailjet_subscription_signup_setttings() {
+
+  if (variable_get('MAILEJT_SUBSCRIBE') == TRUE) {
+    $signup_forms_array = array();
+    $query_signup_forms = db_select('signup_units_data', 'units')
+      ->condition('units.id', 0, '>')
+      ->fields('units', array('id'))
+      ->orderBy('units.created', 'ASC');
+
+    $result = $query_signup_forms->execute();
+    $counter = 0;
+
+    foreach ($result as $record) {
+      $signup_forms_array[$counter] = $record->id;
+      $counter++;
+    }
+
+    $signup_forms = mailjet_subscription_load_multiple($signup_forms_array);
+
+    $signup_forms_results = '<table class="sticky-enabled tableheader-processed sticky-table">
+	 <thead><tr><th>'.t('ID/Entity').'</th><th>'.t('Title').'</th><th>'.t('Created').'</th><th>'.t('Updated').'</th><th colspan="2"><center>'.t('Operations').'</center></th> </tr></thead><tbody>';
+
+    foreach ($signup_forms as $form) {
+
+      $signup_forms_results .='<tr class="odd"><td style="width:50px;text-align:center;" >' . $form->id . '</td><td>' . $form->title . '</td><td>' . date('m/d/Y', $form->created) . '</td><td>' . date('m/d/Y', $form->updated) . '</td><td><a href="/admin/config/system/mailjet/signup-setttings/add-form?entity_id=' . $form->id . '" >Edit</a></td><td><a href="/admin/config/system/mailjet/signup-setttings/edit-labels?entity_id=' . $form->id . '" >Edit field labels</a></td></tr>';
+    }
+    $signup_forms_results .= '</tbody></table>';
+
+    return $signup_forms_results;
+
+  }
+
 }
 
 /*
