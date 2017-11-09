@@ -62,7 +62,7 @@ function mailjet_subscription_update_7100() {
   if (!db_table_exists('signup_units_data')) {
     db_create_table('signup_units_data', $schema['signup_units_data']);
   }
-  
+
 }
 
 
@@ -70,13 +70,17 @@ function mailjet_subscription_update_7100() {
  * Implements hook_disable().
  */
 function mailjet_subscription_disable() {
+  variable_set('mailjet_fields',field_info_instances('signup_units_data','main'));
   variable_set('MAILEJT_SUBSCRIBE', FALSE);
-  $training_field_instance = field_info_instances('signup_units_data', 'signup_units_data');
-  foreach ($training_field_instance as $field_data) {
-    field_delete_instance($field_data);
-  }
-  $booking_field_instance = field_info_instances('signup_fields_data', 'signup_fields_data');
-  foreach ($booking_field_instance as $field_data) {
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function mailjet_subscription_uninstall(){
+  $signup_field_instance = variable_get('mailjet_fields');
+
+  foreach ($signup_field_instance as $field_data) {
     field_delete_instance($field_data);
   }
 }

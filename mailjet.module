@@ -51,11 +51,9 @@ function mailjet_menu() {
   $items['admin/config/system/mailjet/mailjet-panel'] = array(
     'title' => 'Mailjet',
     'description' => 'Send your emails by your Mailjet API.',
-    'page callback' => 'system_admin_menu_block_page',
+    'page callback' => 'mailjet_panel_page',
     'access arguments' => array('access administration pages'),
     'type' => MENU_LOCAL_TASK,
-    'file path' => drupal_get_path('module', 'system'),
-    'file' => 'system.admin.inc',
   );
 
 ////main page mail jet
@@ -192,6 +190,23 @@ function mailjet_domains_add_form_submit($form, &$form_state) {
   else {
     return FALSE;
   }
+}
+
+/**
+ * Generates Mailjet Panel page.
+ */
+function mailjet_panel_page(){
+
+  $output_links_mailjet = "<div class='left clearfix'><div class='admin-panel'><h3>".t('Mailjet configuration panel')."</h3><div class='body'><ul class='admin-list'>";
+  $action_links = menu_local_actions();
+  foreach ($action_links as $link) {
+    $output_links_mailjet .= "<li class='leaf'><a href='/" . $link['#link']['path'] . "'>" . $link['#link']['title'] . "</a><div class='description'>" . $link['#link']['description'] . "</div></li>";
+  }
+
+  $output_links_mailjet .="</ul></div></div>";
+  $output_links_mailjet .="<style>ul.action-links{display: none;}</style>";
+
+  return $output_links_mailjet;
 }
 
 /**
@@ -1186,150 +1201,13 @@ function mailjet_field_delete_field($field) {
 }
 
 /**
- * Implements hook_init()
- */
-function mailjet_init(){
-  if(current_path()=='admin/config/system/mailjet/mailjet-panel') {
-    variable_set('current_path_init', current_path());
-    drupal_theme_rebuild();
-  }
-  else{
-	variable_del('current_path_init');
-  }
-}
-
-/**
- * Implements hook_theme_registry_alter()
- */
-function mailjet_theme_registry_alter(&$theme_registry) {	
-  if((variable_get('current_path_init'))=='admin/config/system/mailjet/mailjet-panel'){
-    $module_path = drupal_get_path('module', 'mailjet');
-    // Find all .tpl.php files in this module's folder recursively.
-    $template_file_objects = drupal_find_theme_templates($theme_registry, '.tpl.php', $module_path);
-
-    // Iterate through all found template file objects.
-    foreach ($template_file_objects as $key => $template_file_object) {
-      // If the template has not already been overridden by a theme.
-      if (!isset($theme_registry[$key]['theme path']) || !preg_match('#/themes/#', $theme_registry[$key]['theme path'])) {
-
-        // Alter the theme path and template elements.
-        $theme_registry[$key]['theme path'] = $module_path;
-        $theme_registry[$key] = array_merge($theme_registry[$key], $template_file_object);
-        $theme_registry[$key]['type'] = 'module';
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_menu_breadcrumb_alter().
  */
 function mailjet_menu_breadcrumb_alter(&$active_trail, $item) {
   global $base_url;
-
   $active_trail = array_merge(array_slice($active_trail, 0, count($active_trail)), array($active_trail[count($active_trail) - 1]));
-
-  if (current_path() == 'admin/config/system/mailjet/mailjet-panel' || current_path() == 'admin/config/system/mailjet/signup-setttings') {
-    $breadcrumb_string = '<div  style="font-size:0.846em;" class="breadcrumb">' . "<a href='" . $base_url . "'>" . t('Home') . "</a>  » ";
-    $len = count($active_trail);
-    $count = 0;
-    foreach ($active_trail as $trail) {
-
-      if ($len - 2 > $count) {
-        if (isset($trail['link_title']) && isset($trail['link_path'])) {
-          $breadcrumb_string .= "<a href='" . $base_url . "/" . $trail['link_path'] . "'>" . $trail['link_title'] . "</a> » ";
-        }
-      }
-
-      if ($len - 1 == $count) {
-        if (isset($trail['link_title']) && isset($trail['link_path'])) {
-          $breadcrumb_string .= "<a href='" . $base_url . "/" . $trail['link_path'] . "'>" . $trail['link_title'] . "</a>  ";
-        }
-      }
-
-      $count++;
-    }
-    $breadcrumb_string .= "</div>";
-    variable_set('overlay_breadcrumb', $breadcrumb_string);
-  }
-  else {
-    variable_del('overlay_breadcrumb');
-  }
 }
 
-/**
- * Implements hook_preprocess(&$variables)
- */
-function mailjet_preprocess(&$variables) {
-  if (!empty(variable_get('output_links_mailjet2') && empty( $variables['output_links_mailjet']))) {
-    $variables['output_links_mailjet'] = variable_get('output_links_mailjet2');
-  }
-
-  if (!empty(variable_get('signup_forms2') && empty( $variables['signup_forms']) )) {
-    $variables['signup_forms'] = variable_get('signup_forms2');
-  }
-
-  if (!empty(variable_get('action_links_signup') && empty( $variables['action_links_signup']) )) {
-    $variables['action_links_signup'] = variable_get('action_links_signup');
-  }
-
-  if (!empty(variable_get('overlay_breadcrumb') && empty($variables['overlay_breadcrumb']))) {
-    $variables['overlay_breadcrumb'] = variable_get('overlay_breadcrumb');
-  }
-}
-
-/**
- * Implements hook_preprocess_page
- */
-function mailjet_preprocess_page(&$vars) {
-  global $base_url;
-
-  $output_links_mailjet = "<div class='left clearfix'><div class='admin-panel'><h3>Mailjet configuration panel</h3><div class='body'><ul class='admin-list'>";
-  foreach ($vars['action_links'] as $link) {
-    $output_links_mailjet .= "<li class='leaf'><a href='" . $base_url . '/' . $link['#link']['path'] . "'>" . $link['#link']['title'] . "</a><div class='description'>" . $link['#link']['description'] . "</div></li>";
-  }
-
-  $output_links_mailjet .="</ul></div></div>";
-  $vars['output_links_mailjet'] = $output_links_mailjet;
-  variable_set('output_links_mailjet2', $output_links_mailjet);
-
-  $action_links_signup='';
-  
-  foreach ($vars['action_links'] as $link) {
-      $action_links_signup .= "<li style='list-style-type:none !important;list-style-image:none !important;' class='leaf'><a href='" . $base_url . '/' . $link['#link']['path'] . "'>" . $link['#link']['title'] . "</a></li>";
-  }
-
-  variable_set('action_links_signup', $action_links_signup);
-  if (variable_get('MAILEJT_SUBSCRIBE') == TRUE) {
-    $signup_forms_array = array();
-    $query_signup_forms = db_select('signup_units_data', 'units')
-        ->condition('units.id', 0, '>')
-        ->fields('units', array('id'))
-        ->orderBy('units.created', 'ASC');
-
-    $result = $query_signup_forms->execute();
-    $counter = 0;
-
-    foreach ($result as $record) {
-      $signup_forms_array[$counter] = $record->id;
-      $counter++;
-    }
-
-	$signup_forms = mailjet_subscription_load_multiple($signup_forms_array);
-
-    $signup_forms_results = '<table class="sticky-enabled tableheader-processed sticky-table">
-	 <thead><tr><th>ID/Entity</th><th>Title</th><th>Created</th><th>Updated</th><th colspan="2"><center>Operations</center></th> </tr></thead><tbody>';
-
-    foreach ($signup_forms as $form) {
-
-      $signup_forms_results .='<tr class="odd"><td style="width:50px;text-align:center;" >' . $form->id . '</td><td>' . $form->title . '</td><td>' . date('m/d/Y', $form->created) . '</td><td>' . date('m/d/Y', $form->updated) . '</td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-setttings/add-form?entity_id=' . $form->id . '" >Edit</a></td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-setttings/edit-labels?entity_id=' . $form->id . '" >Edit field labels</a></td></tr>';
-    }
-    $signup_forms_results .= '</tbody></table>';
-
-    $vars['signup_forms'] = $signup_forms_results;
-	variable_set('signup_forms2', $signup_forms_results);
-  }
-}
 
 // Getter functions - LISTS and Properties
 function mailjet_get_lists() {
