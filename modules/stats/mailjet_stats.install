@@ -1,6 +1,10 @@
 <?php
 
 /**
+ * @file
+ */
+
+/**
  * Installs the stats module.
  */
 function mailjet_stats_install() {
@@ -28,7 +32,7 @@ function mailjet_stats_install() {
       'field_name' => $field_name,
       'entity_type' => 'commerce_order',
       'bundle' => 'commerce_order',
-      'label' => t('Mailjet Campaign ID'),
+      'label' => st('Mailjet Campaign ID'),
       'settings' => array(),
       'widget' => array(
         'type' => 'text_default',
@@ -46,10 +50,10 @@ function mailjet_stats_install() {
  * Uninstall the stats module.
  */
 function mailjet_stats_uninstall() {
-    if (field_info_field('mailjet_campaign_id')) {
-        field_delete_field('mailjet_campaign_id');
-        // Purge field data now to allow mailjet stats module to be uninstalled
-        // if this is the only field remaining.
-        field_purge_batch(10);
-    }
+  if (field_info_field('mailjet_campaign_id')) {
+    field_delete_field('mailjet_campaign_id');
+    // Purge field data now to allow mailjet stats module to be uninstalled
+    // if this is the only field remaining.
+    field_purge_batch(10);
+  }
 }

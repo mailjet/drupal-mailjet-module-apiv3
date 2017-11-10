@@ -141,6 +141,9 @@ plugins@mailjet.com
 Changelog
 ---------
 
+= 7.x-2.16 10 November 2017 =
+* Major improvements
+
 = 7.x-2.15 16 October 2017 =
 * Bug fix: The callback parameter is temporarily removed
 

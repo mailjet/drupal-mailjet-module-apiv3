@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * @file
+ * Install the necessary settings for module 'EVENT'
+ */
+ 
 /**
  * Implements hook_schema().
  */
