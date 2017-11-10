@@ -56,7 +56,7 @@ function mailjet_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-////main page mail jet
+  ////main page mail jet
   $items['admin/config/system/mailjet'] = array(
     'title' => 'Mailjet settings',
     'page callback' => 'drupal_get_form',
@@ -1285,47 +1285,22 @@ function mailjet_roi_stats() {
  */
 function mailjet_find_conctact($email, $list_id) {
   $mj = mailjet_new();
-  $id_contact = array();
-  $response = FALSE;
+  $response=true;
 
-  $params = array(
-    "method" => "GET",
-    "ContactsList" => $list_id
+  $contact_params = array(
+    'method' => 'GET',
+    'ContactEmail' => $email,
+    'ContactsList' => $list_id
   );
 
-  $result = $mj->listrecipient($params);
-  $contacts_lists = $result->getResponse()->Data;
+  $result = $mj->listrecipient($contact_params);
 
-
-  foreach ($contacts_lists as $contact) {
-    $params = array(
-      "method" => "VIEW",
-      "ID" => $contact->ContactID
-    );
-
-    $result = $mj->contact($params);
-
-    if (trim($result->getResponse()->Data[0]->Email) == trim($email)) {
-      $response = TRUE;
-      break;
-    }
+  if ($result->getResponse()->Count < 1) {
+    $response = false;
   }
 
-  if ($response == TRUE) {
-    $is_un_subs = 0; // 1 - unsubscribed, !=1 - subscribed
-
-    $contact_params = array(
-      'method' => 'GET',
-      'ContactEmail' => $email,
-      'ContactsList' => $list_id
-    );
-
-    $result = $mj->listrecipient($contact_params);
-
-
-    if (!empty($result->getResponse()->Data) && $result->getResponse()->Data[0]->IsUnsubscribed == 1) {
-      $response = FALSE;
-    }
+  if (!empty($result->getResponse()->Data) && $result->getResponse()->Data[0]->IsUnsubscribed == 1) {
+    $response = false;
   }
 
   return $response;
