@@ -528,10 +528,12 @@ function mailjet_subscription_form_submit($form, &$form_state) {
     $signup_form->title = $title;
   }
 
-  $status_save = mailjet_subscription_create_signup_form($signup_form, $title, $description, $field_confirmation_message, $confirmation_email_text, $submit_button, $destination, $error_token, $subscribe_error, $field_subscribe_error_exist, $field_subscribe_success, $doublein, $ml_lists, $ml_fields_array, $field_css, $field_js, $email_text_button, $email_text_description, $email_text_thank_you, $email_owner, $missmatch_data_types, $footer_description);
+  $result = mailjet_subscription_create_signup_form($signup_form, $title, $description, $field_confirmation_message, $confirmation_email_text, $submit_button, $destination, $error_token, $subscribe_error, $field_subscribe_error_exist, $field_subscribe_success, $doublein, $ml_lists, $ml_fields_array, $field_css, $field_js, $email_text_button, $email_text_description, $email_text_thank_you, $email_owner, $missmatch_data_types, $footer_description);
 
-  if ($status_save != FALSE) {
+
+  if ($result['status'] != FALSE) {
     drupal_set_message(t('Subscription form saved successfully!'));
+    drupal_goto('/admin/config/system/mailjet/signup-setttings');
   }
   else {
     drupal_set_message(t('The subscription form hasn\'t been created! Error! Try again later.'));
@@ -614,8 +616,9 @@ function mailjet_subscription_block_form($form, &$form_state, $form_id) {
 
           $form['singup-' . $field] = array(
             '#type' => 'textfield',
-            '#title' => variable_get('signup_label' . $field . '_' . $form_id),
+            '#title' => ''.variable_get('signup_label' . $field . '_' . $form_id),
             '#description' => $description_field,
+            '#required' => TRUE,
             '#default_value' => '',
           );
         }
@@ -679,6 +682,17 @@ function mailjet_subscription_submit_validate_form($form, &$form_state) {
         if (!preg_match("/^\s*(3[01]|[12][0-9]|0?[1-9])\-(1[012]|0?[1-9])\-((?:19|20)\d{2})\s*$/", $field_value) && !empty($field_value)) {
           form_set_error('singup-' . $field, str_replace("%type", 'DATE', $missmatch_values));
         }
+        else {
+          if(!empty($field_value)){
+            $date = $field_value;
+            $date_array = explode("-", $date);
+
+            if (checkdate($date_array[1], $date_array[0], $date_array[2]) == FALSE) {
+              form_set_error('singup-' . $field, str_replace("%type", 'DATE', $missmatch_values));
+            }
+          }
+        }
+
         break;
 
       case 'bool':
@@ -995,13 +1009,14 @@ function mailjet_subscription_block_view($delta = '') {
         // $block['content'] = drupal_get_form('mailjet_subscription_block_form', $form->id);
         $wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form->id));
 
-        $a = drupal_get_form('mailjet_subscription_block_form', $form->id);
+        $a = drupal_get_form('mailjet_subscription_block_form_' . $form->id . '_form', $form->id, 'mailjet_subscription_block_form');
+
         $block['content'] = array(
           '#markup' => drupal_render($a),
           '#attached' => array(
             'css' => array(
               $wrapper->signup_field_css->value() => array('type' => 'inline', 'group' => CSS_THEME, 'scope' => 'header'),
-              '.block-mailjet-subscription input{ width:95%;}' => array('type' => 'inline', 'group' => CSS_THEME, 'scope' => 'header'),
+              '.block-mailjet-subscription .form-item input{ width:95%;}' => array('type' => 'inline', 'group' => CSS_THEME, 'scope' => 'header'),
             ),
             'js' => array(
               htmlspecialchars_decode($wrapper->signup_field_js->value(), ENT_QUOTES) => array('type' => 'inline', 'group' => JS_THEME, 'scope' => 'footer'),
@@ -1013,6 +1028,26 @@ function mailjet_subscription_block_view($delta = '') {
   }
 
   return $block;
+}
+
+/**
+ * Implements hook_forms().
+ *
+ * This allows each subscription form rendering to have a unique form
+ * ID. If this weren't the case, multiple forms getting rendered on a single
+ * page display would have submit button conflicts.
+ */
+function mailjet_subscription_forms($form_id, $args) {
+  $forms = array();
+  if (strpos($form_id, 'mailjet_') === 0 && isset($args[1])) {
+    if ($args[1] == 'mailjet_subscription_block_form') {
+      $forms['mailjet_subscription_block_form_' . $args[0] . '_form'] = array(
+        'callback' => 'mailjet_subscription_block_form',
+      );
+    }
+  }
+
+  return $forms;
 }
 
 /**
@@ -1037,9 +1072,9 @@ function mailjet_subscription_create_signup_form($signup_form, $title, $descript
 
   if (!empty($fields)) {
     $fields = implode(",", $fields);
-    $wrapper->signup_fields_form->set(!empty($fields) ? $fields : '');
   }
 
+  $wrapper->signup_fields_form->set(!empty($fields) ? $fields : NULL);
   $wrapper->signup_email_text_button->set(!empty($email_text_button) ? $email_text_button : '');
   $wrapper->signup_email_text_thank_you->set(!empty($email_text_thank_you) ? $email_text_thank_you : '');
   $wrapper->signup_email_text_description->set(!empty($email_text_description) ? $email_text_description : '');
@@ -1065,9 +1100,10 @@ function mailjet_subscription_create_signup_form($signup_form, $title, $descript
   $wrapper->signup_footer_email_description->set(!empty($footer_description) ? $footer_description : '');
 
   $status = $wrapper->save();
+  $identifier = $wrapper->getIdentifier();
 
   //return status of save of entity
-  return $status;
+  return ['status' => $status, 'id' => $identifier];
 }
 
 /*
@@ -1081,7 +1117,7 @@ function mailjet_subscription_entity_info() {
     'controller class' => 'EntityAPIController', //default controller class, later we can extent this class to make properties of this entity
     'base table' => 'signup_units_data', // base table for saving the entity properties
     'fieldable' => TRUE, //set to TRUE, if extra fields are to be attached to the entity
-    'entity keys' => array(// we are setting the entity keys and the bundle as the property named 'type' of this entity. 
+    'entity keys' => array(// we are setting the entity keys and the bundle as the property named 'type' of this entity.
       'id' => 'id',
       'label' => 'name',
       'bundle' => 'type',
