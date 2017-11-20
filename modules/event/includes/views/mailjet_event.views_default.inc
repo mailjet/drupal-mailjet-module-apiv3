@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * @file
+ * Adds views support for mailjet events.
+ */
+
+/**
+ * Default views implementation code.
+ */
+
 function mailjet_event_views_default() {
   $views = array();
 

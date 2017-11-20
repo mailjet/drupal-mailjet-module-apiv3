@@ -1,8 +1,14 @@
 <?php
 
-/**
- * Implements hook_views_default_views().
+ /**
+ * @file
+ * Adds views Default values for Mailjet list.
  */
+
+/**
+  * Implements hook_views_default_views().
+  */
+  
 function mailjet_list_views_default_views() {
   $views = array();
 

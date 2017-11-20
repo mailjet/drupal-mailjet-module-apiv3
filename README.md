@@ -141,6 +141,9 @@ plugins@mailjet.com
 Changelog
 ---------
 
+= 7.x-2.15 16 October 2017 =
+* Bug fix: The callback parameter is temporarily removed
+
 = 7.x-2.14 1 June 2017 =
 * Bug fix: Messages improved
 * Bug fix: Validate add domain field

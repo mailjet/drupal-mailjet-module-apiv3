@@ -23,10 +23,10 @@ function mailjet_trigger_examples_views_api() {
 function mailjet_trigger_examples_menu() {
   $items = array();
 
-  $items['admin/mailjet/triggered_marketing'] = array(
+  $items['admin/config/system/mailjet/mailjet-panel/triggered_marketing'] = array(
     'title' => 'Triggered Marketing',
     'description' => t('Click here to define and activate different email marketing triggers (order reminder, purchase anniversary, etc.)'),
-    'type' => MENU_NORMAL_ITEM,
+    'type' => MENU_LOCAL_ACTION,
     'access arguments' => array('administer mailjet module'),
     'page callback' => 'drupal_goto',
     'weight' => 3,

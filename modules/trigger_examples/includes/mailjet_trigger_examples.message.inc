@@ -473,3 +473,4 @@ function mailjet_trigger_examples_message_form_submit($form, &$form_state) {
   $form_state['input'] = array();
   $form_state['rebuild'] = TRUE;
 }
+
