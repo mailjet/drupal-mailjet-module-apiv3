@@ -44,7 +44,7 @@ function mailjet_campaign_iframe() {
     variable_get('runningBtachJobs', $still_running);
     $default_url = urldecode($default_url);
 
-    return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
+    return '<iframe src="' . $default_url . '" width="100%" height="1080px" frameborder="0"></iframe>';
   }
   return t('Unable to generate campaign.');
 }
