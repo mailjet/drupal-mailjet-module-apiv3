@@ -2,6 +2,12 @@
 
 /**
  * Iframe for the lists.
+ * @file
+ * Contains helper function for lists iframe.
+ */
+
+/**
+ * Custom function for list Iframe.
  */
 function mailjet_list_iframe() {
   if (!variable_get('mailjet_username') && !variable_get('mailjet_password')) {
@@ -14,14 +20,20 @@ function mailjet_list_iframe() {
     global $base_url;
     global $language;
 
-    $langCodesMap = array('en' => 'en_US', 'fr' => 'fr_FR', 'de' => 'de_DE', 'es' => 'es_ES');
-    $defaultLang = 'en';
-    $locale = isset($langCodesMap[$language->language]) ? $langCodesMap[$language->language] : $langCodesMap[$defaultLang];
+    $lang_codes_map = array(
+      'en' => 'en_US',
+      'fr' => 'fr_FR',
+      'de' => 'de_DE',
+      'es' => 'es_ES',
+    );
+
+    $default_lang = 'en';
+    $locale = isset($lang_codes_map[$language->language]) ? $lang_codes_map[$language->language] : $lang_codes_map[$default_lang];
 
 
-    $callbackurl = 'r=commerceguys&t='.$token.'&show_menu=none&sp=display&u=Drupal-3.0&locale='.$locale;
+    $callbackurl = 'r=commerceguys&t=' . $token . '&show_menu=none&sp=display&u=Drupal-3.0&locale=' . $locale;
 
-    $default_url = IFRAME_URL."contacts?";
+    $default_url = IFRAME_URL . "contacts?";
 
     return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
   }
