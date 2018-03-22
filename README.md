@@ -140,6 +140,9 @@ plugins@mailjet.com
 
 Changelog
 ---------
+= 7.x-2.16 5 December 2017 =
+* New feature: added creation of a subscription block
+* Various bugfixes and improvements
 
 = 7.x-2.15 16 October 2017 =
 * Bug fix: The callback parameter is temporarily removed
