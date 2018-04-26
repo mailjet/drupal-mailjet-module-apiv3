@@ -106,7 +106,7 @@ function mailjet_menu() {
     'file' => 'includes/mailjet.iframes.inc',
     'type' => MENU_LOCAL_ACTION,
     'page callback' => 'mailjet_go_to_external_link',
-    'page arguments' => array(IFRAME_URL . 'signup?p=drupal-3.0'),
+    'page arguments' => array(IFRAME_URL . 'signup?aff=drupal-3.0'),
   );
 
   $items['admin/config/system/mailjet/api/register/alter_callback'] = array(
