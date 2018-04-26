@@ -21,9 +21,11 @@ function mailjet_register_iframe() {
   $default_lang = 'en';
   $locale = isset($lang_codes_map[$language->language]) ? $lang_codes_map[$language->language] : $lang_codes_map[$default_lang];
 
-  $default_url = IFRAME_URL . "reseller/signup?r=commerceguys&sp=display&aff=drupal-3.0&locale={$locale}&cb=";
+//  $default_url = IFRAME_URL . "reseller/signup?r=commerceguys&sp=display&aff=drupal-3.0&locale={$locale}&cb=";
+  $default_url = IFRAME_URL . "reseller/signup?r=commerceguys&sp=display&aff=drupal-3.0&locale={$locale}";
   $callbackurl = urlencode($base_url . '?q=/admin/config/system/mailjet/api/register/alter_callback');
-  return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
+  return '<iframe src="' . $default_url . '" width="100%" height="1080px" frameborder="0"></iframe>';
+//  return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
 }
 
 /**
@@ -44,7 +46,8 @@ function mailjet_plans_iframe() {
     $default_lang = 'en';
     $locale = isset($lang_codes_map[$language->language]) ? $lang_codes_map[$language->language] : $lang_codes_map[$default_lang];
 
-    $callbackurl = 'r=commerceguys&t=' . $token . '&show_menu=none&sp=display&locale=' . $locale;
+    $callbackurl = 't=' . $token . '&show_menu=none&sp=display&locale=' . $locale;
+//    $callbackurl = 'r=commerceguys&t=' . $token . '&show_menu=none&sp=display&locale=' . $locale;
 
     $default_url = IFRAME_URL . "reseller/pricing/?";
 

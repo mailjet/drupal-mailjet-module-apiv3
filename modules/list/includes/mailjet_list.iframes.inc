@@ -31,7 +31,8 @@ function mailjet_list_iframe() {
     $locale = isset($lang_codes_map[$language->language]) ? $lang_codes_map[$language->language] : $lang_codes_map[$default_lang];
 
 
-    $callbackurl = 'r=commerceguys&t=' . $token . '&show_menu=none&sp=display&u=Drupal-3.0&locale=' . $locale;
+//    $callbackurl = 'r=commerceguys&t=' . $token . '&show_menu=none&sp=display&u=Drupal-3.0&locale=' . $locale;
+    $callbackurl = 't=' . $token . '&show_menu=none&sp=display&u=Drupal-3.0&locale=' . $locale;
 
     $default_url = IFRAME_URL . "contacts?";
 
