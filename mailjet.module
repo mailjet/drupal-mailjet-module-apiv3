@@ -1211,17 +1211,21 @@ function mailjet_menu_breadcrumb_alter(&$active_trail, $item) {
 
 // Getter functions - LISTS and Properties
 function mailjet_get_lists() {
-  $mailjet = mailjet_new();
   $contact_lists2 = array();
+
+  $mailjet = mailjet_new();
   $counter_contact = 0;
-  $contact_lists = $mailjet->contactslist()->getResponse();
+  $getlist_params = array(
+    'method' => 'GET',
+    'limit' => get_mailjet_get_lists_limit(),
+  );
+  $contact_lists = $mailjet->contactslist($getlist_params)->getResponse();
   if (!empty($contact_lists) && is_array($contact_lists->Data)) {
     foreach ($contact_lists->Data as $list) {
       $contact_lists2[$list->ID] = $list->Name;
       $counter_contact++;
     }
   }
-
   return $contact_lists2;
 }
 

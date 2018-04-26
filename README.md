@@ -63,17 +63,14 @@ location, if needed, e.g. for use in a distribution.
 Installation
 ------------
 
-1. Download a release from https://www.drupal.org/project/mailjet.
+1. Download the latest release from https://www.drupal.org/project/mailjet.
 2. Upload the module in your Drupal sites/all/modules/ directory.
 3. Log in as administrator in Drupal.
-4. Enable the Mailjet settings module on the Administer > Site building > 
-Modules page.
-5. Fill in required settings on the Administer > Site configuration > Mailjet
+4. Enable the Mailjet settings module on the Administration > Modules page.
+5. Fill in required settings on the Administration > Configuration > Mailjet
  settings page.
-6. You will be required to enter API key and Secret Key, if you do not have any, 
-    you should go to https://www.mailjet.com/
-    And signup for your credential data. You should enter those credentials 
-    under your API tab (your_site/admin/config/system/mailjet/api). 
+6. You will be required to enter API key and Secret Key from your Mailjet account.
+    If you do not have an account yet, please [create one](https://app.mailjet.com/signup?aff=drupalmj). 
 
 Configuration
 -------------
@@ -140,6 +137,9 @@ plugins@mailjet.com
 
 Changelog
 ---------
+= 7.x-2.16 5 December 2017 =
+* New feature: added creation of a subscription block
+* Various bugfixes and improvements
 
 = 7.x-2.15 16 October 2017 =
 * Bug fix: The callback parameter is temporarily removed
