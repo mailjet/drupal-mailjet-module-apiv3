@@ -137,6 +137,9 @@ plugins@mailjet.com
 
 Changelog
 ---------
+= 7.x-2.17 17 April 2018 =
+* Update the tracking parameter
+
 = 7.x-2.16 5 December 2017 =
 * New feature: added creation of a subscription block
 * Various bugfixes and improvements

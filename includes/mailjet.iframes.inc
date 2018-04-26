@@ -17,11 +17,11 @@ function mailjet_register_iframe() {
     'de' => 'de_DE',
     'es' => 'es_ES',
   );
-  
+
   $default_lang = 'en';
   $locale = isset($lang_codes_map[$language->language]) ? $lang_codes_map[$language->language] : $lang_codes_map[$default_lang];
 
-  $default_url = IFRAME_URL . "reseller/signup?r=commerceguys&sp=display&p=drupal-3.0&locale={$locale}&cb=";
+  $default_url = IFRAME_URL . "reseller/signup?r=commerceguys&sp=display&aff=drupal-3.0&locale={$locale}&cb=";
   $callbackurl = urlencode($base_url . '?q=/admin/config/system/mailjet/api/register/alter_callback');
   return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
 }
