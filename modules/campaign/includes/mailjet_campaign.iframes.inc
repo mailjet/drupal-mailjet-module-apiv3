@@ -31,7 +31,8 @@ function mailjet_campaign_iframe() {
 
     $callbackurl = urlencode($base_url . '?q=/admin/mailjet/campaign/alter_callback');
 
-    $default_url = IFRAME_URL."campaigns?t={$token}&show_menu=none&sp=display&locale={$locale}&cb=";
+    $default_url = IFRAME_URL."campaigns?t={$token}&show_menu=none&sp=display&locale={$locale}";
+//    $default_url = IFRAME_URL."campaigns?t={$token}&show_menu=none&sp=display&locale={$locale}&cb=";
 
     $running_bjs = variable_get('runningBtachJobs', array());
     $still_running = array();
@@ -45,6 +46,7 @@ function mailjet_campaign_iframe() {
     $default_url = urldecode($default_url);
 
     return '<iframe src="' . $default_url . '" width="100%" height="1080px" frameborder="0"></iframe>';
+//    return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
   }
   return t('Unable to generate campaign.');
 }
