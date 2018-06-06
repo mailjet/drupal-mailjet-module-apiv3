@@ -319,8 +319,8 @@ function mailjet_new() {
     $mj = new Mailjet($key, $secret_key);
     return $mj;
   }
-  if (!variable_get('mailjet_username') && !variable_get('mailjet_password')) {
-    drupal_set_message(t('You need to add your MailJet API details before you can continue'), 'warning');
+  if (!variable_get('mailjet_username') && !variable_get('mailjet_password') && user_access('administer mailjet module')) {
+    drupal_set_message(t('You need to add your Mailjet API details before you can continue'), 'warning');
     drupal_goto('admin/config/system/mailjet/api');
   }
   return FALSE;
@@ -620,14 +620,14 @@ function mailjet_properties_sync($new_field = NULL, $delete = FALSE) {
     }
   }
   else {
-    drupal_set_message(t('Couldn\'t reach MailJet to retrieve existing contact properties! Please try again later or contact MailJet!'), 'error');
+    drupal_set_message(t('Couldn\'t reach Mailjet to retrieve existing contact properties! Please try again later or contact Maijet!'), 'error');
   }
 
   //sync Drupal fields to MJ properties
   foreach ($user_fields as $field) {
     if (array_key_exists($field['Name'], $properties)) {
       if ($field['Datatype'] == $properties[$field['Name']]['Datatype']) {
-        //drupal_set_message(t('Field '.$field['Name'].' is already in your MailJet account.'),'status'); // no need of this message - too much spam :)
+        //drupal_set_message(t('Field '.$field['Name'].' is already in your Mailjet account.'),'status'); // no need of this message - too much spam :)
       }
       else {
         $update_params = array(
@@ -638,11 +638,11 @@ function mailjet_properties_sync($new_field = NULL, $delete = FALSE) {
         );
         $update_response = $mj->ContactMetaData($update_params)->getResponse();
         if ($update_response && $update_response->Count >= 0) {
-          drupal_set_message(t('Field ' . $field['Name'] . ' in now updated in your MailJet account!'), 'status');
+          drupal_set_message(t('Field ' . $field['Name'] . ' is now updated in your Mailjet account!'), 'status');
         }
         else {
-          //drupal_set_message(t('Couldn\'t update '.$field['Name'].' in your MailJet account!'),'error');
-          form_set_error('', 'Couldn\'t update ' . $field['Name'] . ' in your MailJet account!');
+          //drupal_set_message(t('Couldn\'t update '.$field['Name'].' in your Mailjet account!'),'error');
+          form_set_error('', 'Couldn\'t update ' . $field['Name'] . ' in your Mailjet account!');
         }
       }
     }
@@ -655,11 +655,11 @@ function mailjet_properties_sync($new_field = NULL, $delete = FALSE) {
       );
       $insert_response = $mj->ContactMetaData($insert_params)->getResponse();
       if ($insert_response && $insert_response->Count >= 0) {
-        drupal_set_message(t('Field ' . $field['Name'] . ' in now inserted in your MailJet account!'), 'status');
+        drupal_set_message(t('Field ' . $field['Name'] . ' is now inserted in your Mailjet account!'), 'status');
       }
       else {
-        //drupal_set_message(t('Couldn\'t insert '.$field['Name'].' in your MailJet account!'),'error');
-        form_set_error('', 'Couldn\'t insert ' . $field['Name'] . ' in your MailJet account!');
+        //drupal_set_message(t('Couldn\'t insert '.$field['Name'].' in your Mailjet account!'),'error');
+        form_set_error('', 'Couldn\'t insert ' . $field['Name'] . ' in your Mailjet account!');
       }
     }
   }
@@ -999,7 +999,7 @@ function get_sync_info($infos) {
         $x++;
       }
 
-      ### If the user status is changed to "BLOCKED" / "DELETED" - the user is ignored and it's not loaded in the view
+      // If the user status is changed to "BLOCKED" / "DELETED" - the user is ignored and it's not loaded in the view
       if ($infos['status'] == 0) {
         $lists = "";
 
