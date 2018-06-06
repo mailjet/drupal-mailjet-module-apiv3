@@ -53,7 +53,7 @@ function mailjet_stats_init() {
  * Implements hook_commerce_checkout_complete().
  */
 function mailjet_stats_commerce_checkout_complete($order) {
-  if (isset($_SESSION['mailjet_campaign_id'])) {
+  if (isset($_SESSION['mailjet_campaign_id']) && function_exists('mailjet_campaign_load')) {
     $order->mailjet_campaign_id[LANGUAGE_NONE][0]['value'] = $_SESSION['mailjet_campaign_id'];
     $mailjet_campaign = mailjet_campaign_load($_SESSION['mailjet_campaign_id']);
     $mailjet_campaign->order_id = $order->order_id;

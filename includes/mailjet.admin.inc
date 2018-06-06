@@ -302,7 +302,7 @@ function mailjet_admin_settings_form_submit($form, &$form_state) {
     $mail_system['default-system'] = 'MailjetSmtpMailSystem';
     variable_set('mail_system', $mail_system);
   }
-  else {
+  else if ($mail_system['default-system'] == 'MailjetSmtpMailSystem') {
     $mail_system['default-system'] = 'DefaultMailSystem';
     variable_set('mail_system', $mail_system);
   }
