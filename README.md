@@ -137,6 +137,12 @@ plugins@mailjet.com
 
 Changelog
 ---------
+= 7.x-2.18 6 June 2018 =
+* Fix issue when Stats module enabled and Campaign module disabled
+* Fix "Send emails through Mailjet" unchecked overrides non-default Mail system
+* Fix redirecting regular users to the Mailjet Settings
+* Add config setting for user property syncing
+
 = 7.x-2.17 17 April 2018 =
 * Update the tracking parameter
 
