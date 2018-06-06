@@ -35,11 +35,21 @@ function mailjet_admin_settings_form() {
     $form['onoff']['mail_headers_allow_html_mailjet'] = array(
       '#default_value' => $mail_headers_allow_html,
       '#type' => 'checkbox',
-      '#title' => t('Allow HTML.'),
+      '#title' => t('Allow HTML'),
       '#description' => t('If checked, the body of the e-mail will allow html code. If unchecked, the body will be converted to plain text.'),
+      '#default_value' => $mail_headers_allow_html,
     );
+    
+    $mailjet_properties_sync = isset($form_state['values']['onoff']['mailjet_properties_sync']) ? $form_state['values']['onoff']['mailjet_properties_sync'] : variable_get('mailjet_properties_sync', TRUE);
+    $form['onoff']['mailjet_properties_sync'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Sync user fields and subscriptions'),
+      '#description' => t('If checked, account profile fields and list subscriptions will be synced to Mailjet every time a user account is added, updated, or deleted.'),
+      '#default_value' => $mailjet_properties_sync,
+     );
 
-    if ($tracking_check = mailjet_user_trackingcheck()) {
+    $tracking_check = mailjet_user_trackingcheck();
+    if ($tracking_check) {
 
       $form['tracking'] = array(
         '#type' => 'fieldset',
@@ -127,8 +137,8 @@ function mailjet_admin_settings_form() {
       $form['#submit'][] = 'mailjet_admin_settings_tracking';
     }
 
-    if ($user_infos = mailjet_user_infos()) {
-      //print"<pre>"; print_r($user_infos);
+    $user_infos = mailjet_user_infos();
+    if ($user_infos) {
       $form['infos'] = array(
         '#type' => 'fieldset',
         '#title' => t('Account Information')
@@ -261,7 +271,7 @@ function mailjet_admin_settings_form_validate($form, &$form_state) {
   $connected = FALSE;
 
   for ($i = 0; $i < count($configs); ++$i) {
-    $soc = @ fsockopen($configs[$i][0] . $host, $configs[$i][1], $errno, $errstr, 5);
+    $soc = @fsockopen($configs[$i][0] . $host, $configs[$i][1], $errno, $errstr, 5);
 
     if ($soc) {
       fClose($soc);
@@ -307,12 +317,8 @@ function mailjet_admin_settings_form_submit($form, &$form_state) {
     variable_set('mail_system', $mail_system);
   }
 
-  if ($form_state['values']['mail_headers_allow_html_mailjet']) {
-    variable_set('mail_headers_allow_html_mailjet', $form_state['values']['mail_headers_allow_html_mailjet']);
-  }
-  else {
-    variable_set('mail_headers_allow_html_mailjet', 0);
-  }
+  variable_set('mail_headers_allow_html_mailjet', $form_state['values']['mail_headers_allow_html_mailjet']);
+  variable_set('mailjet_properties_sync', $form_state['values']['mailjet_properties_sync']);
 
   drupal_set_message(t('Mailjet settings saved successfully!'));
 }
