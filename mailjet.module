@@ -7,6 +7,17 @@
 /**
  * Implements hook_help().
  */
+
+// Autoloading via composer
+
+require_once DRUPAL_ROOT . '/vendor/autoload.php';
+
+use Drupal\mailjet\MailjetApi\MailjetApi;
+use Exception;
+use Mailjet\Client;
+use Mailjet\Resources;
+
+
 define("IFRAME_URL", "https://app.mailjet.com/");
 
 function mailjet_help($path, $arg) {

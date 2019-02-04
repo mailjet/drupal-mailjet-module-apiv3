@@ -1,0 +1,23 @@
+{
+  "name": "mailjet/drupal-mailjet-module-apiv3",
+  "type": "drupal-module",
+  "description": "Mailjet Drupal integration",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/mailjet",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/mailjet",
+    "source": "http://cgit.drupalcode.org/mailjet"
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "git@github.com:mailjet/mailjet-apiv3-php.git"
+    }
+  ],
+  "require": {
+    "phpmailer/phpmailer": "~5.2",
+    "mailjet/mailjet-apiv3-php": "dev-master"
+  }
+}
