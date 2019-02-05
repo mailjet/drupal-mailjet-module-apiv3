@@ -483,7 +483,7 @@ function mailjet_api_form_validate($form, $form_state) {
     variable_set('mailjet_active', TRUE);
     $params = [
       'AllowedAccess' => 'campaigns,contacts,stats,pricing,account,reports',
-      'APIKeyALT' => $form_state->getValue('mailjet_username'),
+      'APIKeyALT' => $form_state['values']['mailjet_username'],
       'TokenType' => 'iframe',
       'IsActive' => TRUE,
     ];

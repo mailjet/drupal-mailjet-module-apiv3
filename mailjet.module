@@ -406,7 +406,7 @@ function mailjet_user_trackingupdate($tracking, $current_events) {
                     $body = [
                         'APIKeyALT' => MailjetApi::$mjApiKey,
                         'EventType' => $key,
-                        'Url' => $tracking['Url'],
+                        'Url' => $tracking['url'],
                     ];
 
                     $new_response = $mailjetApiClient->post(Resources::$Eventcallbackurl, ['body' => $body]);
