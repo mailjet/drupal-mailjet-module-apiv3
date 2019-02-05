@@ -682,12 +682,11 @@ function mailjet_user_cancel($infos) {
   mailjet_sync_single_user($infos, 'remove');
 }
 
-function mailjet_sync_single_user($infos, $type) {
+function mailjet_sync_single_user($infos, $action) {
   if (!variable_get('mailjet_properties_sync', TRUE)) {
     return;
   }
 
-  mailjet_properties_sync();
   $mailjetApiClient = mailjet_new();
 
   $user = get_sync_info($infos);
@@ -696,11 +695,12 @@ function mailjet_sync_single_user($infos, $type) {
     $mj_lists = explode(",", $user[$infos['mail']]['mj_lists']);
     $mj_lists = array_diff($mj_lists, array(''));
   }
-  //if (!empty($defaul_mj_list)) {
+  // Add the default list as well
   $mj_lists[] = mailjet_get_default_list_id($mailjetApiClient);
-  //}
 
-  switch ($type) {
+  mailjet_properties_sync();
+
+  switch ($action) {
     case 'add':
     case 'update':
       foreach ($mj_lists as $key => $value) {

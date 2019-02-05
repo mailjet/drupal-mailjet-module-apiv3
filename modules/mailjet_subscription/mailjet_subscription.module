@@ -719,7 +719,7 @@ function mailjet_subscription_unsubscribe_account($form, &$form_state) {
 
   $form_wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_state['values']['signup_id_form']));
 
-  $responseContactList = MailjetApi::syncMailjetContact($form_wrapper->signup_contact_lists->value(), ['Email' => $user->mail], 'unsub');
+  $responseContactList = MailjetApi::syncMailjetContact($form_wrapper->signup_contact_lists->value(), ['Email' => $user->mail], 'remove');
   if (false != $responseContactList) {
     watchdog('mailjet_messages', t('The new contact was unsubscribed from list #' . $form_wrapper->signup_contact_lists->value() . '.'));
     drupal_set_message(t('The user is unsubscribe successfully!'));
@@ -881,7 +881,7 @@ function mailjet_subscription_submit_suscribe_form($form, &$form_state) {
 
     if ($double_opt_in == 1) {
         //Unsubscribe
-        $responseContactList = MailjetApi::syncMailjetContact($form_wrapper->signup_contact_lists->value(), ['Email' => $form_state['values']['signup-email']], 'unsub');
+        $responseContactList = MailjetApi::syncMailjetContact($form_wrapper->signup_contact_lists->value(), ['Email' => $form_state['values']['signup-email']], 'remove');
     }
 
     //redicrect or redicrect and display success message after all process

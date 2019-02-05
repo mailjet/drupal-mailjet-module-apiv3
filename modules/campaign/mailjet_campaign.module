@@ -134,12 +134,14 @@ function mailjet_campaign_save($campaign) {
  * Does a replacement of a link in a email template, adds a tracking token to the link.
  */
 function _mailjet_campaign_alter_callback() {
-  watchdog('mailjet', json_encode($_POST));
-  watchdog('mailjet', print_r($_POST, TRUE));
+
+    // No Event sent.
+    if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+        drupal_not_found();
+    }
 
   $post = trim(file_get_contents('php://input'));
-
-  \Drupal::logger('mailjet')->notice(print_r($post, TRUE));
+  watchdog('mailjet', print_r($post, TRUE));
   $postDecoded = json_decode($post);
 
   $html = '';
@@ -149,7 +151,7 @@ function _mailjet_campaign_alter_callback() {
     $data = (object) $postDecoded->data;
   }
   elseif (isset($postDecoded->mailjet)) {
-    $mailjet = json_decode($postDecoded->mailjet);
+    $mailjet = $postDecoded->mailjet;
     $data = $mailjet->data;
   }
 
@@ -157,6 +159,7 @@ function _mailjet_campaign_alter_callback() {
   if (isset($postDecoded->response)) {
     $response = (object) $postDecoded->response;
   }
+
 
   if ($response->message == 'html saved successfully') {
 
