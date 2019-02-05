@@ -1,7 +1,7 @@
 {
   "name": "mailjet/drupal-mailjet-module-apiv3",
   "type": "drupal-module",
-  "description": "Mailjet Drupal integration",
+  "description": "Mailjet Drupal 7 integration",
   "keywords": ["Drupal"],
   "license": "GPL-2.0+",
   "homepage": "https://www.drupal.org/project/mailjet",
@@ -14,10 +14,33 @@
     {
       "type": "vcs",
       "url": "git@github.com:mailjet/mailjet-apiv3-php.git"
+    },
+    {
+      "type": "vcs",
+      "url": "git@github.com:mailjet/Mailjet-iframe-v3.git"
     }
   ],
   "require": {
     "phpmailer/phpmailer": "~5.2",
-    "mailjet/mailjet-apiv3-php": "dev-master"
+    "mailjet/mailjet-apiv3-php": "dev-master",
+    "mailjet/Mailjet-iframe-v3": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "MailjetTools\\": "src/MailjetApi/"
+    }
+  },
+  "config": {
+    "preferred-install": "dist"
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "find ./vendor -name '.git' | xargs rm -rf",
+      "find ./vendor -name '.gitignore' | xargs rm -rf"
+    ],
+    "post-update-cmd": [
+      "find ./vendor -name '.git' | xargs rm -rf",
+      "find ./vendor -name '.gitignore' | xargs rm -rf"
+    ]
   }
 }

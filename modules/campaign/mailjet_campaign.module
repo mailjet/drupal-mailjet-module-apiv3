@@ -1,5 +1,8 @@
 <?php
 
+use Mailjet\Resources;
+use MailjetTools\MailjetApi;
+
 /**
  * Implements hook_menu().
  */
@@ -133,29 +136,44 @@ function mailjet_campaign_save($campaign) {
 function _mailjet_campaign_alter_callback() {
   watchdog('mailjet', json_encode($_POST));
   watchdog('mailjet', print_r($_POST, TRUE));
-  $html = '';
-  $mj = mailjet_new();
 
-  if (isset($_POST['data'])) {
-    $data = (object) $_POST['data'];
+  $post = trim(file_get_contents('php://input'));
+
+  \Drupal::logger('mailjet')->notice(print_r($post, TRUE));
+  $postDecoded = json_decode($post);
+
+  $html = '';
+  $mailjetApiClient = mailjet_new();
+
+  if (isset($postDecoded->data)) {
+    $data = (object) $postDecoded->data;
   }
-  elseif (isset($_POST['mailjet'])) {
-    $mailjet = json_decode($_POST['mailjet']);
+  elseif (isset($postDecoded->mailjet)) {
+    $mailjet = json_decode($postDecoded->mailjet);
     $data = $mailjet->data;
   }
 
   // Get request response.
-  if (isset($_POST['response'])) {
-    $response = (object) $_POST['response'];
+  if (isset($postDecoded->response)) {
+    $response = (object) $postDecoded->response;
   }
 
-  if ($response->message == 'last change of campaigns parameters') {
+  if ($response->message == 'html saved successfully') {
 
     // Get the HTML for the email template.
-    $res = $mj->data('newsletter', $data->campaign_id, 'HTML', 'text/html', NULL, 'GET', 'LAST')->getResponse();
+    $result = $mailjetApiClient->get(Resources::$NewsletterDetailcontent, ['id' => $data->campaign_id]);
+    if ($result->success() && $result->getCount() > 0) {
+          $campaignContent = $result->getData();
+    } else {
+      $result = $mailjetApiClient->get(Resources::$CampaigndraftDetailcontent, ['id' => $data->campaign_id]);
+      if ($result->success() && $result->getCount() > 0) {
+          $campaignContent = $result->getData();
+      }
+      $isCampaignDraft = true;
+    }
 
-    // Find the body for the email template.
-    $html = $res;
+    $html = $campaignContent[0]['Html-part'];
+
     $get_body_part_html = strstr($html, '<!-- #nl_content -->');
     $actuall_body_part = strstr($get_body_part_html, '</table>', TRUE);
 
@@ -178,37 +196,57 @@ function _mailjet_campaign_alter_callback() {
       }
     }
 
-    $res = $mj->data('newsletter', $data->campaign_id, 'HTML', 'text/html', $html, 'PUT', 'LAST')->getResponse();
+      // Update campaign HTML content
+      $body = [
+          'Html-part' => $html,
+      ];
+      if (!$isCampaignDraft) {
+          $result = $mailjetApiClient->put(Resources::$NewsletterDetailcontent,
+              ['id' => $data->campaign_id, 'body' => $body]);
+          if ($result->success() && $result->getCount() > 0) {
+              $res = $result->getData();
+          }
+      } else {
+          $result = $mailjetApiClient->put(Resources::$CampaigndraftDetailcontent,
+              ['id' => $data->campaign_id, 'body' => $body]);
+          if ($result->success() && $result->getCount() > 0) {
+              $res = $result->getData();
+          }
+      }
   }
 
-  if ($response->message == 'send details saved successfully') {
+  if ($response->message == 'campaign added successfully') {
     $user_infos = mailjet_user_infos();
-    $url = 'http://api.mailjet.com/v3/REST/user/' . $user_infos['Email'];
-    $result = $mj->generalRequest(FALSE, array(), 'GET', $url);
-    sleep(3);
-    $result_arr = json_decode($result);
-    $user_id = $result_arr->Data[0]->ID;
 
-    $url = 'http://api.mailjet.com/v3/REST/apikey?User=' . $user_id;
-    $result_app = $mj->generalRequest(FALSE, array(), 'GET', $url);
-    sleep(3);
-    $result_decode = json_decode($result_app);
-    $akid = $result_decode->Data[0]->ID;
+    $user_id = $user_infos['UserID'];
 
-    $url = 'http://api.mailjet.com/v3/REST/campaign?akid=' . $akid . '&sort=id%20desc&fromTS=1&limit=1';
-    $result_campaign = $mj->generalRequest(FALSE, array(), 'GET', $url);
-    sleep(3);
-    $decoded_response = json_decode($result_campaign);
+    $filters = [
+      'User' => $user_id,
+    ];
+    $response = $mailjetApiClient->get(Resources::$Apikey, ['filters' => $filters]);
+    if ($response->success()) {
+      $akid = $response->getData()[0]['ID'];
+    }
 
-    $created_date = strtotime($decoded_response->Data[0]->CreatedAt);
-    $campaign_name = $decoded_response->Data[0]->Subject;
+    $filters = [
+      'Akid' => $akid,
+      'Sort' => 'ID DESC',
+      'FromTs' => '1',
+      'Limit' => '1',
+    ];
+    $response = $mailjetApiClient->get(Resources::$Campaign, ['filters' => $filters]);
+    if ($response->success()) {
+      $result_campaign = $response->getData();
+    }
+
+    $created_date = strtotime($result_campaign[0]['CreatedAt']);
+    $campaign_name = $result_campaign[0]['Subject'];
 
     $mailjet_campaign = mailjet_campaign_new($data->campaign_id);
     $mailjet_campaign->name = $campaign_name;
     $mailjet_campaign->created = $created_date;
     mailjet_campaign_save($mailjet_campaign);
   }
-
 
 
   if ($data->campaign_id && strpos($data->next_step_url, "summary") !== FALSE) {
@@ -240,28 +278,4 @@ function _mailjet_campaign_alter_callback() {
 
   echo json_encode($res);
   drupal_exit();
-}
-
-/**
- * Get campaign id.
- */
-function getCampaignHTML($id) {
-  $mj = mailjet_new();
-  $res = $mj->data('newsletter', $id, 'HTML', 'text/html', NULL, 'GET', 'LAST')->getResponse();
-
-  $response = $res;
-
-  return $response;
-}
-
-/**
- * Update campaign html.
- */
-function updateCampaignHTML($id, $html) {
-  $mj = mailjet_new();
-  $res = $mj->data('newsletter', $id, 'HTML', 'text/html', $html, 'PUT', 'LAST')->getResponse();
-
-  $response = $res;
-
-  return $response;
 }

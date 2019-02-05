@@ -5,6 +5,8 @@
  * Mailjet Signup module.
  */
 
+use Mailjet\Resources;
+use MailjetTools\MailjetApi;
 /**
  *  Implementation of hook_views_api().
  */
@@ -66,6 +68,7 @@ function mailjet_subscription_menu() {
  */
 
 function mailjet_subscription_signup_setttings() {
+    global $base_url;
 
   if (variable_get('MAILEJT_SUBSCRIBE') == TRUE) {
     $signup_forms_array = array();
@@ -89,7 +92,7 @@ function mailjet_subscription_signup_setttings() {
 
     foreach ($signup_forms as $form) {
 
-      $signup_forms_results .='<tr class="odd"><td style="width:50px;text-align:center;" >' . $form->id . '</td><td>' . $form->title . '</td><td>' . date('m/d/Y', $form->created) . '</td><td>' . date('m/d/Y', $form->updated) . '</td><td><a href="/admin/config/system/mailjet/signup-setttings/add-form?entity_id=' . $form->id . '" >Edit</a></td><td><a href="/admin/config/system/mailjet/signup-setttings/edit-labels?entity_id=' . $form->id . '" >Edit field labels</a></td></tr>';
+      $signup_forms_results .='<tr class="odd"><td style="width:50px;text-align:center;" >' . $form->id . '</td><td>' . $form->title . '</td><td>' . date('m/d/Y', $form->created) . '</td><td>' . date('m/d/Y', $form->updated) . '</td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-setttings/add-form?entity_id=' . $form->id . '" >Edit</a></td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-setttings/edit-labels?entity_id=' . $form->id . '" >Edit field labels</a></td></tr>';
     }
     $signup_forms_results .= '</tbody></table>';
 
@@ -551,22 +554,25 @@ function mailjet_subscription_block_form($form, &$form_state, $form_id) {
   global $user;
   $form_wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_id));
   $is_un_subs = 0;
-  $mailjet = mailjet_new();
+  $mailjetApiClient = mailjet_new();
   $description_field = '';
 
+  $list_id = $form_wrapper->signup_contact_lists2->value();
+  $contactEmail = isset($user->mail) ? $user->mail : '';
 
-  $contact_params = array(
-    'method' => 'GET',
-    'ContactEmail' => isset($user->mail) ? $user->mail : '',
-    'ContactsList' => $form_wrapper->signup_contact_lists2->value()
-  );
+  $filters = [
+    'ContactEmail' => $contactEmail,
+    'ContactsList' => $list_id,
+  ];
 
-  $result = $mailjet->listrecipient($contact_params);
-
-
-  if (!empty($result->getResponse()->Data)) {
-    $is_un_subs = $result->getResponse()->Data[0]->IsUnsubscribed == 1 ? 0 : 1;
+  $result = $mailjetApiClient->get(Resources::$Listrecipient, ['filters' => $filters]);
+  if ($result->success() && $result->getCount() > 0) {
+    $data = $result->getData();
+    if (isset($data[0]['IsUnsubscribed'])) {
+      $is_un_subs = (true == $data[0]['IsUnsubscribed'] ? 0 : 1);
+    }
   }
+
 
   $form['signup_id_form'] = array(
     '#type' => 'hidden',
@@ -596,7 +602,7 @@ function mailjet_subscription_block_form($form, &$form_state, $form_id) {
       foreach ($fields as $field) {
         if (!empty($field)) {
 
-          switch (mailjet_get_propertiy_name($field)) {
+          switch (mailjet_get_property_type($field)) {
             case 'int':
               $description_field = t('Correct field format - numbers. Ex: 1234');
               break;
@@ -664,7 +670,7 @@ function mailjet_subscription_submit_validate_form($form, &$form_state) {
     $missmatch_values = !empty($form_wrapper->signup_missmatch_error_field->value()) ? $form_wrapper->signup_missmatch_error_field->value() : 'Incorrect data format. Please enter the correct values according to the example of the description in the field:  <  %id  >';
     $missmatch_values = str_replace("%id", variable_get('signup_label' . $field . '_' . $form_id), $missmatch_values);
 
-    switch (mailjet_get_propertiy_name($field)) {
+    switch (mailjet_get_property_type($field)) {
       case 'int':
         if (!preg_match('/^[0-9]{1,45}$/', $field_value) && !empty($field_value)) {
           form_set_error('singup-' . $field, str_replace("%type", 'int', $missmatch_values));
@@ -709,22 +715,12 @@ function mailjet_subscription_submit_validate_form($form, &$form_state) {
  */
 function mailjet_subscription_unsubscribe_account($form, &$form_state) {
   global $user, $base_url;
-  $mailjet = mailjet_new();
+    $mailjetApiClient = mailjet_new();
 
   $form_wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_state['values']['signup_id_form']));
 
-  $unsub_params = array(
-    'method' => 'POST',
-    'Action' => 'Unsubscribe',
-    'Addresses' => array($user->mail),
-    'ListID' => $form_wrapper->signup_contact_lists2->value()
-  );
-
-  $mailjet->resetRequest();
-
-  $response = $mailjet->manycontacts($unsub_params)->getResponse();
-
-  if ($response && isset($response->Count) && $response->Count > 0) {
+  $responseContactList = MailjetApi::syncMailjetContact($form_wrapper->signup_contact_lists2->value(), ['Email' => $user->mail], 'unsub');
+  if (false != $responseContactList) {
     watchdog('mailjet_messages', t('The new contact was unsubscribed from list #' . $form_wrapper->signup_contact_lists2->value() . '.'));
     drupal_set_message(t('The user is unsubscribe successfully!'));
     drupal_goto($base_url, array());
@@ -754,24 +750,16 @@ function mailjet_subscription_submit_subscribe($form, &$form_state) {
   }
 
   $form_wrapper = entity_metadata_wrapper('signup_units_data', mailjet_subscription_load($form_hidden_id));
-  $mailjet = mailjet_new();
-
-  $add_params = array(
-    'method' => 'POST',
-    'Action' => 'Add',
-    'Force' => TRUE,
-    'Addresses' => array($sec_code_email),
-    'ListID' => $list_id
-  );
-  $mailjet->resetRequest();
-  $response = $mailjet->manycontacts($add_params)->getResponse();
-
-  if ($response && isset($response->Count) && $response->Count > 0) {
+  $mailjetApiClient = mailjet_new();
+  $contact = [
+    'Email' => $sec_code_email
+  ];
+  $response = MailjetApi::syncMailjetContact($list_id, $contact);
+  if (false != $response) {
     if (!empty($form_wrapper->signup_succesfull_subscribe->value())) {
-      drupal_set_message(t($form_wrapper->signup_succesfull_subscribe->value()));
-    }
-    else {
-      drupal_set_message(t('You have subscribed successfully! Thank you!'));
+      drupal_set_message(t($form_wrapper->signup_succesfull_subscribe->value()), 'status');
+    } else {
+      drupal_set_message(t('You have successfully subscribed to Mailjet contact list! Thank you!'));
     }
   }
 
@@ -794,12 +782,10 @@ function mailjet_subscription_submit_suscribe_form($form, &$form_state) {
   $email_owner = !empty($form_wrapper->signup_email_owner->value()) ? $form_wrapper->signup_email_owner->value() : 'Mailjet';
   $email_description_footer = !empty($form_wrapper->signup_footer_email_description->value()) ? $form_wrapper->signup_footer_email_description->value() : 'Did not ask to subscribe to this list? Or maybe you have changed your mind? Then simply ignore this email and you will not be subscribed';
   $email_header = !empty($form_wrapper->signup_confirmation_email->value()) ? $form_wrapper->signup_confirmation_email->value() : 'Please Confirm Your Subscription To';
-  $check_complate = FALSE;
-
 
   $double_opt_in = $form_wrapper->signup_double_opt_in->value();
   $data = array();
-  $mailjet = mailjet_new();
+  $mailjetApiClient = mailjet_new();
 
   if (!empty($form_wrapper->signup_fields_form->value())) {
     $fields = explode(",", $form_wrapper->signup_fields_form->value());
@@ -810,65 +796,73 @@ function mailjet_subscription_submit_suscribe_form($form, &$form_state) {
 
   $response_exist_user = mailjet_find_conctact($email, $form_wrapper->signup_contact_lists2->value());
 
-  if ($response_exist_user == FALSE) {
+  if ($response_exist_user) {
+    $message = str_replace('%', $email, $form_wrapper->signup_subscribe_exist_string->value());
+    drupal_set_message($message, 'error');
+    return;
+  }
 
-    if ($double_opt_in == 1) {
+  if ($double_opt_in == 1) {
 
-      global $language, $base_url;
-      $params = array();
+    global $language, $base_url;
+    $params = array();
 
-      $from = mailjet_get_a_trusted_email();
-      $params['subject'] = t('Subscription Confirmation');
-      $url = $base_url . '/confirmation-subscribe?sec_code=' . base64_encode($form_state['values']['signup-email']) . '&list=' . $form_wrapper->signup_contact_lists2->value() . '&others=' . $form_hidden_id;
+    $from = mailjet_get_a_trusted_email();
+    $params['subject'] = t('Subscription Confirmation');
+    $url = $base_url . '/confirmation-subscribe?sec_code=' . base64_encode($form_state['values']['signup-email']) . '&list=' . $form_wrapper->signup_contact_lists2->value() . '&others=' . $form_hidden_id;
 
-      $params['body'] = array(
-        prepare_mail_template($email_header, $email_text_button, $email_description, $email_footer, $email_owner, $url, $email_description_footer)
-      );
-
-      $message = drupal_mail('mailjet', 'mailjet-test', $email, $language, $params, $from, FALSE);
-
-      if (empty($message['from'])) {
-        $message['from'] = variable_get('site_mail', '');
-      }
-      if (empty($message['subject'])) {
-        $message['subject'] = $params['subject'];
-      }
-      if (empty($message['body'])) {
-        $message['body'] = $params['body'];
-      }
-
-      $mail_system = new MailjetSmtpMailSystem();
-    }
-
-    $add_params = array(
-      'method' => 'POST',
-      'Action' => 'Add',
-      'Force' => TRUE,
-      'Addresses' => array($form_state['values']['signup-email']),
-      'ListID' => $form_wrapper->signup_contact_lists2->value()
+    $params['body'] = array(
+      prepare_mail_template($email_header, $email_text_button, $email_description, $email_footer, $email_owner, $url, $email_description_footer)
     );
 
+    $message = drupal_mail('mailjet', 'mailjet-test', $email, $language, $params, $from, FALSE);
 
-    $mailjet->resetRequest();
-    $response = $mailjet->manycontacts($add_params)->getResponse();
+    if (empty($message['from'])) {
+      $message['from'] = variable_get('site_mail', '');
+    }
+    if (empty($message['subject'])) {
+      $message['subject'] = $params['subject'];
+    }
+    if (empty($message['body'])) {
+      $message['body'] = $params['body'];
+    }
 
-    if ($response && isset($response->Count) && $response->Count > 0) {
+    $mail_system = new MailjetSmtpMailSystem();
+  }
 
-      // watchdog('mailjet_messages','The user with mail is add to contact list with iD'.);
-      $contact_id = $response->Data[0]->Recipients->Items[0]->Contact->ID;
+
+    $contact = [
+        'Email' => $form_state['values']['signup-email']
+    ];
+
+    // If we have any properties we clean the `signup-` part from the name and prepare them to sync to Mailjet
+    // Note that the `$properties` is Object not Array
+    $propertiesClean = [];
+    foreach ($fields as $field) {
+        if (!empty($field) && !empty($form_state['values']['singup-' . $field])) {
+            switch (mailjet_get_property_type($field)) {
+                case 'datetime':
+                    $data_value = DateTime::createFromFormat('d-m-Y', $form_state['values']['singup-' . $field])->getTimestamp();
+                    break;
+
+                default:
+                    $data_value = $form_state['values']['singup-' . $field];
+                    break;
+            }
+            $propertiesClean[$field] = $data_value;
+        }
+    }
+    if (isset($propertiesClean) && !empty($propertiesClean)) {
+        $contact['Properties'] = $propertiesClean;
+    }
+    $response = MailjetApi::syncMailjetContact($form_wrapper->signup_contact_lists2->value(), $contact);
+
+    if (false != $response) {
 
       if ($double_opt_in == 1) {
-        $unsub_params = array(
-          'method' => 'POST',
-          'Action' => 'Unsubscribe',
-          'Addresses' => array($form_state['values']['signup-email']),
-          'ListID' => $form_wrapper->signup_contact_lists2->value()
-        );
-
-        $mailjet->resetRequest();
-        $response = $mailjet->manycontacts($unsub_params)->getResponse();
-
-        $check_complate = TRUE;
+        //Unsubscribe
+        $responseContactList = MailjetApi::syncMailjetContact($form_wrapper->signup_contact_lists2->value(),
+            ['Email' => $form_state['values']['signup-email']], 'unsub');
       }
 
       if ($mail_system->mail($message)) {
@@ -885,50 +879,9 @@ function mailjet_subscription_submit_suscribe_form($form, &$form_state) {
       drupal_set_message(t($form_wrapper->signup_subscribe_error->value()), 'error');
     }
 
-
-    foreach ($fields as $field) {
-
-      if (!empty($field) && !empty($form_state['values']['singup-' . $field])) {
-        switch (mailjet_get_propertiy_name($field)) {
-          case 'datetime':
-            $data_value = DateTime::createFromFormat('d-m-Y', $form_state['values']['singup-' . $field])->getTimestamp();
-            break;
-
-          default:
-            $data_value = $form_state['values']['singup-' . $field];
-            break;
-        }
-
-        $data[] = array(
-          'Name' => $field,
-          'Value' => $data_value,
-        );
-      }
-    }
-
-    if (!empty($data)) {
-
-      $data_params = array(
-        'method' => 'JSON',
-        'ContactID' => $contact_id,
-        'ID' => $contact_id,
-        'Data' => $data
-      );
-
-      $mailjet->resetRequest();
-      $response = $mailjet->contactdata($data_params)->getResponse();
-    }
-
     if ($double_opt_in == 1) {
-      $unsub_params = array(
-        'method' => 'POST',
-        'Action' => 'Unsubscribe',
-        'Addresses' => array($form_state['values']['signup-email']),
-        'ListID' => $form_wrapper->signup_contact_lists2->value()
-      );
-
-      $mailjet->resetRequest();
-      $response = $mailjet->manycontacts($unsub_params)->getResponse();
+        //Unsubscribe
+        $responseContactList = MailjetApi::syncMailjetContact($form_wrapper->signup_contact_lists2->value(), ['Email' => $form_state['values']['signup-email']], 'unsub');
     }
 
     //redicrect or redicrect and display success message after all process
@@ -936,12 +889,7 @@ function mailjet_subscription_submit_suscribe_form($form, &$form_state) {
       //redicrect or redicrect and display success message
       drupal_goto($form_wrapper->signup_destination_field->value(), array());
     }
-  }
-  else {
 
-    $message = str_replace('%', $email, $form_wrapper->signup_subscribe_exist_string->value());
-    drupal_set_message($message, 'error');
-  }
 }
 
 /**

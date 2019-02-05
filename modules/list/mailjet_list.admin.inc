@@ -5,6 +5,9 @@
  * Creates the form for Mailjet_list
  */
 
+use Mailjet\Resources;
+use MailjetTools\MailjetApi;
+
 /**
  * Generates the mailjet list editing form. This form is used to edit the content of the list
  */
@@ -329,8 +332,8 @@ function mailjet_list_sync_form_submit($form, &$form_state) {
     return;
   }
   // Start by creating a new mailjet object if we cant do this then there is no point continuing.
-  $mailjet = mailjet_new();
-  if (!$mailjet) {
+  $mailjetApiClient = mailjet_new();
+  if (!$mailjetApiClient) {
     return FALSE;
   }
 
@@ -341,134 +344,32 @@ function mailjet_list_sync_form_submit($form, &$form_state) {
 
     // Create the params to post to mailjet including the comma seperated new users list.
 
-    $csv_str = "email,";
-    $cnt = 0;
+    $contacts = [];
     foreach ($newusers_list as $key => $value) {
-      if ($cnt < 1) {
+        $contact = [];
+        $properties = [];
+        $contact['Email'] = $value['mail'];
+
         if (array_key_exists('properties', $value)) {
           foreach ($value['properties'] as $pkey => $pvalue) {
-            $csv_str .= "{$pkey},";
+              if (strpos($key, "field_") !== FALSE) {
+                  $properties[$pkey] = ((!empty($pvalue)) ? $pvalue : '');
+              }
           }
         }
-        $csv_str = substr($csv_str, 0, -1);
-        $csv_str .= "\n";
-        $cnt++;
-      }
-    }
-
-    foreach ($newusers_list as $key => $value) {
-      $csv_str .= "{$value['mail']},";
-      if (array_key_exists('properties', $value)) {
-        foreach ($value['properties'] as $pkey => $pvalue) {
-          $csv_str .= "{$pvalue},";
+        if (!empty($properties)) {
+            $contact['Properties'] = $properties;
         }
-      }
-      $csv_str = substr($csv_str, 0, -1);
-      $csv_str .= "\n";
-    }
 
-
-    $mailjet->resetRequest();
-    $response_csv_data = $mailjet->data('contactslist', $mailjet_list->list_id, 'CSVData', 'text/plain', $csv_str, 'POST', NULL)->getResponse();
-
-    if ($response_csv_data) {
-      $clid = json_decode($response_csv_data);
-
-      $mailjet->resetRequest();
-      $params_batch_job = array(
-        'method' => 'JSON',
-        'JobType' => 'Contact list import csv',
-        'DataID' => $clid->ID,
-        'Status' => 'Upload',
-        'RefId' => $mailjet_list->list_id,
-        'Method' => 'addnoforce',
-        'APIKeyALT' => variable_get('mailjet_username')
-      );
-
-      $response_batch_job = $mailjet->batchjob($params_batch_job)->getResponse();
-
-      if ($response_batch_job && $response_batch_job->Count > 0) {
-        $bj_id = $response_batch_job->Data[0]->ID;
-        $params_batch_jobCheck = array(
-          'method' => 'GET',
-          'ID' => $bj_id,
-          'APIKeyALT' => variable_get('mailjet_username')
-        );
-        $mailjet->resetRequest();
-        $response_batch_jobCheck = $mailjet->batchjob($params_batch_jobCheck)->getResponse();
-
-        if ($response_batch_jobCheck && $response_batch_jobCheck->Data[0]->Status == "Completed") {
-          drupal_set_message(t('Sync is complete.'), 'status');
-        }
-        else {
-          $bj_ids = variable_get('runningBtachJobs', array());
-          $bj_ids[] = $bj_id;
-          variable_set('runningBtachJobs', $bj_ids);
-          drupal_set_message(t('Sync in proggress.'), 'status');
-        }
-      }
-      else {
-        form_set_error('', t('Could not create a BatchJob for this import'));
+        $contacts[] = $contact;
       }
     }
-    else {
-      form_set_error('', t('Could not create the contact list'));
-    }
-  }
-
-  if (isset($form['#mailjet']['expired_users']) && !empty($form['#mailjet']['expired_users'])) {
-    $expiredusers_list = $form['#mailjet']['expired_users'];
-    $csv_str = "email" . "\n";
-
-    foreach ($expiredusers_list as $key => $value) {
-      $csv_str .= "{$value}" . "\n";
+    $responseInitialSync = MailjetApi::syncMailjetContacts($mailjet_list->list_id, $contacts);
+    if (false == $responseInitialSync) {
+        drupal_set_message(t('Could not create the contact list'));
     }
 
-    $mailjet->resetRequest();
-    $response_csv_data = $mailjet->data('contactslist', $mailjet_list->list_id, 'CSVData', 'text/plain', $csv_str, 'POST', NULL)->getResponse();
-
-    if ($response_csv_data) {
-      $clid = json_decode($response_csv_data);
-
-      $mailjet->resetRequest();
-      $params_batch_job = array(
-        'method' => 'JSON',
-        'JobType' => 'Contact list import csv',
-        'DataID' => $clid->ID,
-        'Status' => 'Upload',
-        'RefId' => $mailjet_list->list_id,
-        'Method' => 'remove',
-        'APIKeyALT' => variable_get('mailjet_username')
-      );
-
-      $response_batch_job = $mailjet->batchjob($params_batch_job)->getResponse();
-
-      if ($response_batch_job && $response_batch_job->Count > 0) {
-        $params_batch_jobCheck = array(
-          'method' => 'GET',
-          'ID' => $response_batch_job->Data[0]->ID,
-          'APIKeyALT' => variable_get('mailjet_username')
-        );
-        $mailjet->resetRequest();
-        $response_batch_jobCheck = $mailjet->batchjob($params_batch_jobCheck)->getResponse();
-
-        if ($response_batch_jobCheck && $response_batch_jobCheck->Data[0]->Status == "Completed") {
-          drupal_set_message(t('Sync for expired contants is complete.'), 'status');
-        }
-        else {
-          drupal_set_message(t('Sync for expired contants in proggress.'), 'status');
-        }
-      }
-      else {
-        form_set_error('', t('Could not create a BatchJob for expired contants'));
-      }
-    }
-    else {
-      form_set_error('', t('Could not create the contact list for expired contants'));
-    }
-  }
-
-  return;
+    drupal_set_message(t('Sync in progress.'), 'status');
 }
 
 /**

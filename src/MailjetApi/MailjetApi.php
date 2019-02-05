@@ -1,11 +1,11 @@
 <?php
 
-namespace Drupal\mailjet\MailjetApi;
+namespace MailjetTools;
 
 use Exception;
 use Mailjet\Client;
 use Mailjet\Resources;
-use Drupal\mailjet\MailjetApi\MailjetIframe;
+use MailjetTools\MailjetIframe;
 
 class MailjetApi
 {
@@ -23,15 +23,15 @@ class MailjetApi
 
         $mjClient = new Client($mailjetApikey, $mailjetApiSecret);
         if (drupal_get_profile() == 'standard') {
-            $mjClient->addRequestOption(CURLOPT_USERAGENT, 'drupal-3.0');
-            $mjClient->addRequestOption('headers', ['User-Agent' => 'drupal-3.0']);
+            $mjClient->addRequestOption(CURLOPT_USERAGENT, 'drupal-7');
+            $mjClient->addRequestOption('headers', ['User-Agent' => 'drupal-7']);
         } elseif (drupal_get_profile() == 'commerce_kickstart') {
             $mjClient->addRequestOption(CURLOPT_USERAGENT, 'kickstart');
             $mjClient->addRequestOption('headers', ['User-Agent' => 'kickstart']);
 
         } else {
-            $mjClient->addRequestOption(CURLOPT_USERAGENT, 'drupal-3.0');
-            $mjClient->addRequestOption('headers', ['User-Agent' => 'drupal-3.0']);
+            $mjClient->addRequestOption(CURLOPT_USERAGENT, 'drupal-7');
+            $mjClient->addRequestOption('headers', ['User-Agent' => 'drupal-7']);
         }
 
         // We turn of secure protocol for API requests if the wordpress does not support it
@@ -338,22 +338,10 @@ class MailjetApi
     {
       $mailjetIframe = new MailjetIframe($username, $password, false);
 
-      $language = \Drupal::languageManager()->getCurrentLanguage();
-      $lang_codes_map = [
-        'en' => 'en_US',
-        'fr' => 'fr_FR',
-        'de' => 'de_DE',
-        'es' => 'es_ES',
-        'it' => 'it_IT',
-      ];
-      $default_lang = 'en';
-      $locale = isset($lang_codes_map[$language->getId()]) ? $lang_codes_map[$language->getId()] : $lang_codes_map[$default_lang];
-
       $mailjetIframe
         ->setCallback('')
         ->setTokenExpiration(600)
-        ->setLocale($locale)
-        ->setTokenAccess(array(
+       ->setTokenAccess(array(
           'campaigns',
           'contacts',
           'stats',
