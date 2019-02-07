@@ -175,7 +175,9 @@ function _mailjet_campaign_alter_callback() {
       $isCampaignDraft = true;
     }
 
-    $html = $campaignContent[0]['Html-part'];
+    if (!empty($campaignContent[0]['Html-part'])) {
+        $html = $campaignContent[0]['Html-part'];
+    }
 
     $get_body_part_html = strstr($html, '<!-- #nl_content -->');
     $actuall_body_part = strstr($get_body_part_html, '</table>', TRUE);
@@ -265,7 +267,7 @@ function _mailjet_campaign_alter_callback() {
       $res = array(
         "code" => 1, // necessary for Mailjet's system to proceed
         "continue" => TRUE,
-        "continue_address" => $_POST['data']['next_step_url'],
+        "continue_address" => $data->next_step_url,
         "block_content" => $html,
       );
 
@@ -276,7 +278,7 @@ function _mailjet_campaign_alter_callback() {
   $res = array(
     "code" => 1, // necessary for Mailjet's system to proceed
     "continue" => TRUE,
-    "continue_address" => $_POST['data']['next_step_url'],
+    "continue_address" => $data->next_step_url,
   );
 
   echo json_encode($res);
