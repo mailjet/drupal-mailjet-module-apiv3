@@ -141,7 +141,7 @@ function _mailjet_campaign_alter_callback() {
     }
 
   $post = trim(file_get_contents('php://input'));
-  watchdog('mailjet', print_r($post, TRUE));
+  watchdog('mailjet-feri', print_r($post, TRUE));
   $postDecoded = json_decode($post);
 
   $html = '';
@@ -260,9 +260,9 @@ function _mailjet_campaign_alter_callback() {
         isset($data->block_type) && $data->block_type && isset($data->block_content) && $data->block_content
     ) {
       $html = $data->block_content;
-      watchdog('mailjet-danny1', $html);
+      watchdog('mailjet-feri', $html);
       $html = str_replace("test msg", "new msg", $html);
-      watchdog('mailjet-danny2', $html);
+      watchdog('mailjet-feri', $html);
 
       $res = array(
         "code" => 1, // necessary for Mailjet's system to proceed
