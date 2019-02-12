@@ -184,6 +184,7 @@ function _mailjet_campaign_alter_callback() {
 
     // Get all links in the body.
     $links = explode('<a', $actuall_body_part);
+    $array_links = array();
     if (!empty($links)) {
       foreach ($links as $key => $value) {
         if ($key != 0) {
