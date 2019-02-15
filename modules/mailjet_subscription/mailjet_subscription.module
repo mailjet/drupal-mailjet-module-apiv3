@@ -24,7 +24,7 @@ function mailjet_subscription_menu() {
 
   $items = array();
 
-  $items['admin/config/system/mailjet/signup-setttings'] = array(
+  $items['admin/config/system/mailjet/signup-settings'] = array(
     'title' => 'Subscription settings',
     'description' => 'Manage subscription settings here',
     'page callback' => 'mailjet_subscription_signup_setttings',
@@ -32,7 +32,7 @@ function mailjet_subscription_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/config/system/mailjet/signup-setttings/add-form'] = array(
+  $items['admin/config/system/mailjet/signup-settings/add-form'] = array(
     'title' => 'Add Mailjet subscription form',
     'access arguments' => array('administer mailjet module'),
     'type' => MENU_LOCAL_ACTION,
@@ -42,11 +42,11 @@ function mailjet_subscription_menu() {
     'access arguments' => array('administer mailjet module'),
   );
 
-  $items['admin/config/system/mailjet/signup-setttings/edit-labels'] = array(
+  $items['admin/config/system/mailjet/signup-settings/edit-labels'] = array(
     'title' => 'Edit Labels of subscription forms',
     'access arguments' => array('administer mailjet module'),
     'type' => MENU_LOCAL_TASK,
-    'tab_parent' => '/admin/config/system/mailjet/signup-setttings',
+    'tab_parent' => '/admin/config/system/mailjet/signup-settings',
     'weight' => 0,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mailjet_subscription_labels_form'),
@@ -92,7 +92,7 @@ function mailjet_subscription_signup_setttings() {
 
     foreach ($signup_forms as $form) {
 
-      $signup_forms_results .='<tr class="odd"><td style="width:50px;text-align:center;" >' . $form->id . '</td><td>' . $form->title . '</td><td>' . date('m/d/Y', $form->created) . '</td><td>' . date('m/d/Y', $form->updated) . '</td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-setttings/add-form?entity_id=' . $form->id . '" >Edit</a></td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-setttings/edit-labels?entity_id=' . $form->id . '" >Edit field labels</a></td></tr>';
+      $signup_forms_results .='<tr class="odd"><td style="width:50px;text-align:center;" >' . $form->id . '</td><td>' . $form->title . '</td><td>' . date('m/d/Y', $form->created) . '</td><td>' . date('m/d/Y', $form->updated) . '</td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-settings/add-form?entity_id=' . $form->id . '" >Edit</a></td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-setttings/edit-labels?entity_id=' . $form->id . '" >Edit field labels</a></td></tr>';
     }
     $signup_forms_results .= '</tbody></table>';
 
@@ -536,7 +536,7 @@ function mailjet_subscription_form_submit($form, &$form_state) {
 
   if ($result['status'] != FALSE) {
     drupal_set_message(t('Subscription form saved successfully!'));
-    drupal_goto('/admin/config/system/mailjet/signup-setttings');
+    drupal_goto('/admin/config/system/mailjet/signup-settings');
   }
   else {
     drupal_set_message(t('The subscription form hasn\'t been created! Error! Try again later.'));
@@ -1004,7 +1004,7 @@ function mailjet_subscription_forms($form_id, $args) {
 function mailjet_subscription_delete_form($form, &$form_state) {
   global $base_url;
   entity_delete('signup_units_data', $form_state['values']['status_id']);
-  $form_state['redirect'] = $base_url . '/admin/config/system/mailjet/signup-setttings';
+  $form_state['redirect'] = $base_url . '/admin/config/system/mailjet/signup-settings';
   drupal_set_message(t('The form has been deleted successfully!'));
 }
 
