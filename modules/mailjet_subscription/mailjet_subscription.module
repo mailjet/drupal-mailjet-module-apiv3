@@ -396,7 +396,7 @@ function mailjet_subscription_form($form, &$form_state) {
   $form['mailjet_lists']['ml_lists'] = array(
     '#type' => 'select',
     '#title' => t('Contact list'),
-    '#description' => t('Select a Mailjet contact list where all new subscribers will be added. You can create additional contact lists in !Mailjet.', array('!Mailjet' => l(t('Mailjet'), $base_url . "/" . "/admin/config/system/mailjet/mailjet-panel/campaign"))),
+    '#description' => t('Select a Mailjet contact list where all new subscribers will be added. You can create additional contact lists in !Mailjet.', array('!Mailjet' => l(t('Mailjet'), $base_url . "/" . "/admin/config/system/mailjet/mailjet-panel/list"))),
     '#options' => $lists_mailjet,
     '#required' => TRUE,
     '#default_value' => (isset($contact_lists) && !empty($contact_lists)) ? array($contact_lists) : array(),
