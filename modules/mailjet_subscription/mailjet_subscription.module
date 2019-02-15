@@ -315,7 +315,7 @@ function mailjet_subscription_form($form, &$form_state) {
   $form['form_settings']['error_missmatch'] = array(
     '#type' => 'textfield',
     '#title' => t('Data type mismatch error'),
-    '#description' => 'Incorrect data values. Please enter correct data type in %id <br /><b>Note:</b> The %id symbol is a placeholder for the field name.')',
+    '#description' => t('Incorrect data values. Please enter correct data type in %id <br /><b>Note:</b> The %id symbol is a placeholder for the field name.'),
     '#default_value' => (isset($missmatch_data_type) && !empty($missmatch_data_type)) ? $missmatch_data_type : '',
   );
 
