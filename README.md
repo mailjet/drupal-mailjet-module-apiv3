@@ -89,11 +89,11 @@ plugins@mailjet.com
 
 Changelog
 ---------
-= 7.x-2.19 18 February 2019
+#### 7.x-2.19 18 February 2019
 * Bugfixes and internal improvements regarding contacts sync, subscription and unsibscription of contacts
 * Updated texts and translations
 
-= 7.x-2.18 6 June 2018 =
+#### 7.x-2.18 6 June 2018
 * Fix issue when Stats module enabled and Campaign module disabled
 * Fix "Send emails through Mailjet" unchecked overrides non-default Mail system
 * Fix redirecting regular users to the Mailjet Settings
@@ -101,26 +101,26 @@ Changelog
 * Fix subscription form issue
 * Fix an issue if campaings module is not installed
 
-= 7.x-2.17 17 April 2018 =
+#### 7.x-2.17 17 April 2018
 * Update the tracking parameter
 
-= 7.x-2.16 5 December 2017 =
+#### 7.x-2.16 5 December 2017
 * New feature: added creation of a subscription block
 * Various bugfixes and improvements
 
-= 7.x-2.15 16 October 2017 =
+#### 7.x-2.15 16 October 2017
 * Bug fix: The callback parameter is temporarily removed
 
-= 7.x-2.14 1 June 2017 =
+#### 7.x-2.14 1 June 2017
 * Bug fix: Messages improved
 * Bug fix: Validate add domain field
 * Bug fix: Unable to synchronize a new user if the Drupal contact list already exists
 
-= 7.x-2.13 6 Mar 2017 =
+#### 7.x-2.13 6 Mar 2017
 * Bug fix: Unable to send more than 1 mail per request when using Libraries API in a non default directory
 https://www.drupal.org/node/2853496
 
-= 7.x-2.12 13 Feb 2017 =
+#### 7.x-2.12 13 Feb 2017
 * Feature: Support autoload for PHPMailer
 https://www.drupal.org/node/2850791
 * Bug fix: Fatal error with plugin
@@ -128,7 +128,7 @@ https://www.drupal.org/node/2753095
 * Bug fix: Error when user profile is associated with entity_reference field
 https://www.drupal.org/node/2491389
 
-= 7.x-2.11 7 Feb 2017 =
+#### 7.x-2.11 7 Feb 2017
 * Bug fix: Module breaks site login
 https://www.drupal.org/node/2491395
 https://www.drupal.org/node/2598060
@@ -137,33 +137,33 @@ https://www.drupal.org/node/2597309
 * Feature: Add ability to disable user information syncing
 https://www.drupal.org/node/2663328
 
-= 7.x-2.10 25 Jan 2017 =
+#### 7.x-2.10 25 Jan 2017
 * Bug fix: https://www.drupal.org/node/2842760
 
-= 7.x-2.9 11 Jan 2017 =
+#### 7.x-2.9 11 Jan 2017
 * Feature: update PHPmailer library
 https://www.drupal.org/node/2842760
 
-= 7.x-2.7 25 Oct 2016 =
+#### 7.x-2.7 25 Oct 2016
 * Bug fixes
 
-= 7.x-2.6 12 Feb 2016 =
+#### 7.x-2.6 12 Feb 2016
 * Mailjet event URL is now public
 Fixed URL path to avoid Drupal redirect
 
-= 7.x-2.5 8 Oct 2015 =
+#### 7.x-2.5 8 Oct 2015
 * Added tracking information
 
-= 7.x-2.4 3 Aug 2015 =
+#### 7.x-2.4 3 Aug 2015
 * Added iFrame parameter to show/hide sending policy
 
-= 7.x-2.3 8 May 2015 =
+#### 7.x-2.3 8 May 2015
 * Bug fixes
 
-= 7.x-2.2 8 Apr 2015 =
+#### 7.x-2.2 8 Apr 2015
 * Bug fix: not able to display the trusted domain form
 https://www.drupal.org/node/2456715
 
-= 7.x-2.1 24 Mar 2015 =
-= 7.x-2.0 17 Mar 2015 =
+#### 7.x-2.1 24 Mar 2015
+#### 7.x-2.0 17 Mar 2015
 * First release of the new version of the Mailjet module
