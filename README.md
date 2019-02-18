@@ -1,4 +1,4 @@
-drupal-mailjet-module-apiv3
+Mailjet for Drupal 7.x module
 ===========================
 
 Mailjet APIv3 module for Drupal
@@ -28,8 +28,7 @@ Requirements
 
 Recommended modules
 -------------------
-  The following modules are not strictly required but it is nice to install them to get 
-  the full capability of the Mailjet features.
+  The following modules are not strictly required but it is nice to install them to get the full capability of the Mailjet features.
   * commerce (https://www.drupal.org/project/commerce)
   For the stats sub module to enable the ROI feature install:
   * views_date_format_sql (https://www.drupal.org/project/views_date_format_sql)
@@ -55,10 +54,8 @@ http://github.com/PHPMailer/PHPMailer/archive/v5.2.22.zip
 2) Extract the archive and rename the folder "PHPMailer-5.2.22" to "phpmailer".
 3) Upload the "phpmailer" folder to your server inside
 DRUPAL_ROOT/sites/all/libraries/.
-4) Verify that the file class.phpmailer.php is correctly located at this
-path: DRUPAL_ROOT/sites/all/libraries/phpmailer/class.phpmailer.php
-* Note: Libraries API can be used to move the library to an alternative
-location, if needed, e.g. for use in a distribution.
+4) Verify that the file class.phpmailer.php is correctly located at this path: DRUPAL_ROOT/sites/all/libraries/phpmailer/class.phpmailer.php
+* Note: Libraries API can be used to move the library to an alternative location, if needed, e.g. for use in a distribution.
 
 Installation
 ------------
@@ -69,66 +66,21 @@ Installation
 4. Enable the Mailjet settings module on the Administration > Modules page.
 5. Fill in required settings on the Administration > Configuration > Mailjet
  settings page.
-6. You will be required to enter API key and Secret Key from your Mailjet account.
-    If you do not have an account yet, please [create one](https://app.mailjet.com/signup?aff=drupalmj). 
+6. You will be required to enter API key and Secret Key from your Mailjet account. If you do not have an account yet, please [create one](https://app.mailjet.com/signup?aff=drupalmj). 
 
 Configuration
 -------------
 
-1. The site can be set up to use the mailjet module as an email gateway, this
-    can be easily configured, by clicking on the Settings tab => 
-    your_site/admin/config/system/mailjet, and then selecting the checkbox on 
-    the top, "Send emails through Mailjet", click "Save Settings" button on the 
-    bottom of the page. 
-    You can test that feature by sending a test email, just click the button on 
-    the top of the page Send test email in Settings tab.
-2. If you want to enable the Campaign feature, you should enable the 
-    mailjet_campaign module, you can do that from Administer > Site building > 
-    Modules page (your_site/admin/modules)
-3.  Enabling the campaign sub module will create additional menu item in your
-    administration menu, the new menu is called "Campaign" (your_site/admin/mailjet/campaign). 
-4. Clicking this menu item will display all the campaigns created by the administrator, 
-    from this point you will be able to create new campaigns as well, 
-    the same way you do that on mailjet.com.
-5. If you want to create a campaign simply go to the campaign page => 
-your_site/admin/mailjet/campaign
-    On the top right side of the page that will be presented there is a 
-    button “Create a campaign”, clicking that button will lead you to a new 
-    page presenting a form that needs to be full fill, 
-    this is the first out of three steps of creating a new campaign. The 
-    following fields are requiered - title of the campaign, language, and 
-    contact list that you already created, select your edition mode and click
-    “Save and continue”.
-    In the next step you should enter the “Sender name”, choose template of 
-    the email and write your email, 
-    if you want you can add links inside the email body(the "TEXT" text area) 
-    leading to your site and if a customer click on that link and purchase any product 
-    from your site this order will be recorded in the ROI stats feature 
-    where you can see how good is your conversion rate, click the “Done” 
-    button on the bottom of 
-    the email text area, and click “Continue”, in the next step which is the 
-    last one you can choose 
-    to send the email now or schedule it for later, click “Save and send”.
-6.  If you enable the stats module 2 menu items will appear Dashboard where 
-    you can see the results of the mail campaigns and the Mailjet ROI stats,
-    clicking the ROI statsyou can see the actual conversion of your campaigns,
-    this feature will display a view which will present the campaign name, 
-    number of orders made by users who clicked on the link of your site in your email campaign.
-7. My account menu item will redirect you to the mailjet logging page.
-8. Upgrade menu link will redirect you to the pricing list of mailjet where 
-    you can pick up a plan and upgrade your account.
-9. The contacts menu item allows you to create lists that can be used for your campaigns.
-    If you click on Contacts the list of all contact lists will be displayed on the top right 
-    side of the screen a button for creating a new contact list is available => Create a contact list. 
-    If you click on the button a short notification from mailjet with some terms will appear 
-    if you click the OK button you will be redirected to the creation form of your contacts list. 
-    Here you need to enter your list name, choose an import method => 
-    Upload from CSV, Copy/Paste from Excel, Copy/Paste from TXT, CSV, RTF. 
-    Upload your file and click Create. 
-    On the next step you should choose the import type email or mailjet_list_view click create.
-10. If you want to enable the trigger_examples sub-module you need to enable 
-    the views_bulk_operations module and apply the following patch to it:  
-    https://www.drupal.org/files/issues/views-vbo-patch-anon-users.patch
+1. The site can be set up to use the Mailjet module as an email gateway, this can be easily configured, by clicking on the Settings tab => your_site/admin/config/system/mailjet, and then selecting the checkbox on the top, "Send emails through Mailjet", click "Save Settings" button on the bottom of the page. You can test that feature by sending a test email, just click the button on the top of the page "Send test email" in Settings tab.
+2. If you want to enable the Campaign feature, you should enable the mailjet_campaign module, you can do that from Administration > Site building > Modules page (your_site/admin/modules)
+3. Enabling the campaign sub module will create additional menu item in your administration menu, the new menu is called "Campaign" (your_site/admin/mailjet/campaign). 
+4. Clicking this menu item will display all the campaigns created by the administrator, from this point you will be able to create new campaigns as well, the same way you do that on app.mailjet.com.
+5. If you want to create a campaign simply go to the Campaigns page => your_site/admin/mailjet/campaign
+6. If you enable the stats module 2 menu items will appear Dashboard where you can see the results of the mail campaigns and the Mailjet ROI stats, clicking the ROI stats you can see the actual conversion of your campaigns. This feature will display a view which will present the campaign name, number of orders made by users who clicked on the link of your site in your email campaign.
+7. My account menu item will redirect you to the Mailjet logging page.
+8. Upgrade menu link will redirect you to the pricing list of Mailjet where you can pick up a plan and upgrade your account.
+9. The contacts menu item allows you to create lists that can be used for your campaigns. New lists can be created and contacts can be  import  in several ways: Upload from CSV, Copy/Paste from Excel, Copy/Paste from TXT, CSV, RTF.
+10. If you want to enable the trigger_examples sub-module you need to enable the views_bulk_operations module and apply the following patch to it: https://www.drupal.org/files/issues/views-vbo-patch-anon-users.patch
       
 Author
 ------
@@ -137,6 +89,10 @@ plugins@mailjet.com
 
 Changelog
 ---------
+= 7.x-2.19 18 February 2019
+* Bugfixes and internal improvements regarding contacts sync, subscription and unsibscription of contacts
+* Updated texts and translations
+
 = 7.x-2.18 6 June 2018 =
 * Fix issue when Stats module enabled and Campaign module disabled
 * Fix "Send emails through Mailjet" unchecked overrides non-default Mail system
