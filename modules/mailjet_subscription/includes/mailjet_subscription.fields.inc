@@ -294,16 +294,16 @@ function mailjet_subscription_get_forms_field_data() {
         'description' => 'Field - Maijet Fields ',
       ),
     ),
-    'signup_contact_lists2' => array(
+    'signup_contact_lists' => array(
       'field' => array(
-        'field_name' => 'signup_contact_lists2',
+        'field_name' => 'signup_contact_lists',
         'entity_types' => array('signup_units_data'),
         'cardinality' => 1,
         'type' => 'text',
         'settings' => array('max_length' => 255),
       ),
       'instance' => array(
-        'field_name' => 'signup_contact_lists2',
+        'field_name' => 'signup_contact_lists',
         'label' => 'Field - Contact list for subcribe',
         'entity_type' => 'signup_units_data',
         'bundle' => 'main',

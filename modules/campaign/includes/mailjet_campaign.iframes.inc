@@ -5,6 +5,7 @@
  * Helper function for generate Campaign Iframes.
  */
 
+use MailjetTools\MailjetApi;
 /**
   * Iframe for the campaigns.
   */
@@ -14,9 +15,6 @@ function mailjet_campaign_iframe() {
     drupal_goto('admin/config/system/mailjet');
   }
 
-  $token = variable_get("APItoken");
-
-  if (!empty($token)) {
     global $base_url;
     global $language;
 
@@ -31,22 +29,11 @@ function mailjet_campaign_iframe() {
 
     $callbackurl = urlencode($base_url . '?q=/admin/mailjet/campaign/alter_callback');
 
-    $default_url = IFRAME_URL."campaigns?t={$token}&show_menu=none&sp=display&locale={$locale}";
-//    $default_url = IFRAME_URL."campaigns?t={$token}&show_menu=none&sp=display&locale={$locale}&cb=";
+    $mailjetIframe = MailjetApi::getMailjetIframe(variable_get('mailjet_username'), variable_get('mailjet_password'));
+    $mailjetIframe->setInitialPage(\MailjetIframe\MailjetIframe::PAGE_CAMPAIGNS);
+    $mailjetIframe->setCallback($callbackurl);
+    $mailjetIframe->setLocale($locale);
 
-    $running_bjs = variable_get('runningBtachJobs', array());
-    $still_running = array();
-    foreach ($running_bjs as $key => $value) {
-      if (is_batchjob_running($value)) {
-        $still_running[] = $value;
-        watchdog('mailjet','Running batcjob: ' . $value . 'Please note that your campaign will be sent only to the processed contacts. Maybe wait and check later if your synchronization is complete!');
-      }
-    }
-    variable_get('runningBtachJobs', $still_running);
-    $default_url = urldecode($default_url);
+    return '<div id="iframe-main-container" class="iframe-main-container" style="width:100%; height: 1300px;">' . $mailjetIframe->getHtml() . '</div>';
 
-    return '<iframe src="' . $default_url . '" width="100%" height="1080px" frameborder="0"></iframe>';
-//    return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
-  }
-  return t('Unable to generate campaign.');
 }

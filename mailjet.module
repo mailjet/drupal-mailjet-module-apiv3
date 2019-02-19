@@ -7,6 +7,17 @@
 /**
  * Implements hook_help().
  */
+
+$path = drupal_get_path('module', 'mailjet');
+
+// Autoloading via composer
+require_once $path . '/vendor/autoload.php';
+
+
+use Mailjet\Resources;
+use MailjetTools\MailjetApi;
+
+
 define("IFRAME_URL", "https://app.mailjet.com/");
 
 function mailjet_help($path, $arg) {
@@ -15,6 +26,7 @@ function mailjet_help($path, $arg) {
       return t('Send your emails by your Mailjet API.');
   }
 }
+
 
 /**
  * Implements hook_menu().
@@ -197,10 +209,12 @@ function mailjet_domains_add_form_submit($form, &$form_state) {
  */
 function mailjet_panel_page(){
 
+    global $base_url;
+
   $output_links_mailjet = "<div class='left clearfix'><div class='admin-panel'><h3>".t('Mailjet configuration panel')."</h3><div class='body'><ul class='admin-list'>";
   $action_links = menu_local_actions();
   foreach ($action_links as $link) {
-    $output_links_mailjet .= "<li class='leaf'><a href='/" . $link['#link']['path'] . "'>" . $link['#link']['title'] . "</a><div class='description'>" . $link['#link']['description'] . "</div></li>";
+    $output_links_mailjet .= "<li class='leaf'><a href='" . $base_url . "/" . $link['#link']['path'] . "'>" . $link['#link']['title'] . "</a><div class='description'>" . $link['#link']['description'] . "</div></li>";
   }
 
   $output_links_mailjet .="</ul></div></div>";
@@ -228,25 +242,24 @@ function mailjet_go_to_external_link($url) {
  * Registration alter callback.
  */
 function _mailjet_register_alter_callback() {
-  module_load_include('api.inc', 'mailjet');
   if (isset($_POST['data']['apikey']) && !empty($_POST['data']['apikey']) && isset($_POST['data']['secretkey']) && !empty($_POST['data']['secretkey'])) {
 
     variable_set('mailjet_active', TRUE);
     variable_set('mailjet_username', $_POST['data']['apikey']);
     variable_set('mailjet_password', $_POST['data']['secretkey']);
 
-    $mailjet = new Mailjet($_POST['data']['apikey'], $_POST['data']['secretkey']);
-    $params = array(
-      'AllowedAccess' => 'campaigns,contacts,stats,pricing,account,reports',
-      'method' => 'JSON',
-      'APIKeyALT' => $mailjet->getAPIKey(),
-      'TokenType' => 'iframe',
-      'IsActive' => TRUE,
-      'SentData' => serialize(array('plugin' => 'drupal-3.0')),
-    );
-    $response2 = $mailjet->apitoken($params)->getResponse();
-    if ($response2->Count > 0) {
-      variable_set('APItoken', $response2->Data[0]->Token);
+      $mailjetApiClient = MailjetApi::getApiClient($_POST['data']['apikey'], $_POST['data']['secretkey']);
+      $params = [
+          'AllowedAccess' => 'campaigns,contacts,stats,pricing,account,reports',
+          'APIKeyALT' => $_POST['data']['apikey'],
+          'TokenType' => 'iframe',
+          'IsActive' => TRUE,
+          'SentData' => serialize(['plugin' => 'drupal-7']),
+      ];
+      $response = MailjetApi::createApiToken($params);
+      if (false != $response) {
+
+      variable_set('APItoken', $response[0]['Token']);
       mailjet_first_sync(mailjet_get_default_list_id(mailjet_new()));
     }
     else {
@@ -313,11 +326,10 @@ function mailjet_libraries_info() {
  */
 function mailjet_new() {
   if (variable_get('mailjet_active', FALSE) && variable_get('mailjet_username') && variable_get('mailjet_password')) {
-    module_load_include('api.inc', 'mailjet');
     $key = variable_get('mailjet_username', '');
     $secret_key = variable_get('mailjet_password', '');
-    $mj = new Mailjet($key, $secret_key);
-    return $mj;
+    $mailjetApiClient = MailjetTools\MailjetApi::getApiClient($key, $secret_key);
+    return $mailjetApiClient;
   }
   if (!variable_get('mailjet_username') && !variable_get('mailjet_password') && user_access('administer mailjet module')) {
     drupal_set_message(t('You need to add your Mailjet API details before you can continue'), 'warning');
@@ -326,34 +338,32 @@ function mailjet_new() {
   return FALSE;
 }
 
+
+
 /**
  * Get the user infos.
  *
  * @return boolean
  */
 function mailjet_user_infos() {
-  $mailjet = mailjet_new();
-  if (!$mailjet) {
+  $mailjetApiClient = mailjet_new();
+  if (!$mailjetApiClient) {
     drupal_goto('admin/config/system/mailjet/api');
     return FALSE;
   }
-  $params_profile = array(
-    'method' => 'GET',
-  );
-  $response = $mailjet->myprofile($params_profile)->getResponse();
+    $responseProfile = $mailjetApiClient->get(Resources::$Myprofile);
+    $responseUser = $mailjetApiClient->get(Resources::$User);
 
-  $params_user = array(
-    'method' => 'GET',
-  );
-  $response_user = $mailjet->user($params_user)->getResponse();
-
-  if ($response && isset($response->Count) && $response->Count > 0) {
-    return array_merge((array) $response->Data[0], (array) $response_user->Data[0]);
-  }
-  else {
-    return FALSE;
-  }
+    if ($responseProfile->success()) {
+        return array_merge($responseProfile->getData()[0], $responseUser->getData()[0]);
+    }
+    else {
+        return FALSE;
+    }
 }
+
+
+
 
 /**
  * Update the user infos.
@@ -362,119 +372,110 @@ function mailjet_user_infos() {
  * @return boolean
  */
 function mailjet_mjuser_update($infos) {
-  $mailjet = mailjet_new();
-  $infos['method'] = 'PUT';
-  $response = $mailjet->myprofile($infos)->getResponse();
-  return !empty($response->Count) ? TRUE : FALSE;
+    $mailjetApiClient = mailjet_new();
+    $response = $mailjetApiClient->put(Resources::$Myprofile, ['body' => $infos]);
+    return ($response->success()) ? TRUE : FALSE;
 }
 
 /**
  * User tracking check.
  */
 function mailjet_user_trackingcheck() {
-  $mailjet = mailjet_new();
-  if (!$mailjet) {
+    $mailjetApiClient = mailjet_new();
+    $filters = [
+        'APIKey' => MailjetApi::$mjApiKey,
+    ];
+    $response = $mailjetApiClient->get(Resources::$Eventcallbackurl, ['filters' => $filters]);
+    if ($response->success()) {
+        return $response->getData();
+    }
     return FALSE;
-  }
-  $params = array(
-    'APIKey' => $mailjet->getAPIKey()
-  );
-  $response = $mailjet->eventcallbackurl($params)->getResponse();
-
-  if ($response && isset($response->Count) && $response->Count > 0) {
-    return $response;
-  }
-  elseif ($response && isset($response->Count) && $response->Count == 0) {
-    return $response;
-  }
-  else {
-    return FALSE;
-  }
 }
 
 /**
  * Mailjet traging update.
  */
 function mailjet_user_trackingupdate($tracking, $current_events) {
-  $mailjet = mailjet_new();
 
-  $check = array("open", "click", "bounce", "spam", "blocked", "unsub");
-  foreach ($tracking as $key => $value) {
-    if (in_array($key, $check)) {
-      if ($value == 1 && !array_key_exists($key, $current_events)) {
-        $params = array(
-          'method' => 'JSON',
-          'APIKeyALT' => $mailjet->getAPIKey(),
-          'EventType' => $key,
-          'Url' => $tracking['url']
-        );
-        $new_response = $mailjet->eventcallbackurl($params)->getResponse();
-        unset($params);
-        unset($new_response);
-      }
+    $mailjetApiClient = mailjet_new();
+    try {
+        $check = ["open", "click", "bounce", "spam", "blocked", "unsub"];
+        foreach ($tracking as $key => $value) {
+            if (in_array($key, $check)) {
+                if ($value == 1 && !array_key_exists($key, $current_events)) {
+                    $body = [
+                        'APIKeyALT' => MailjetApi::$mjApiKey,
+                        'EventType' => $key,
+                        'Url' => $tracking['url'],
+                    ];
 
-      if ($value == 0 && array_key_exists($key, $current_events)) {
-        $del_params = array(
-          'method' => 'DELETE',
-          'ID' => $current_events[$key]
-        );
+                    $new_response = $mailjetApiClient->post(Resources::$Eventcallbackurl, ['body' => $body]);
 
-        $del_response = $mailjet->eventcallbackurl($del_params);
-        unset($del_params);
-        unset($del_response);
-      }
+                    unset($body);
+                    unset($new_response);
+                }
+
+                if ($value == 0 && array_key_exists($key, $current_events)) {
+                    $del_response = $mailjetApiClient->delete(Resources::$Eventcallbackurl, ['id' => $current_events[$key]]);
+
+                    unset($del_response);
+                }
+            }
+        }
+        return TRUE;
+    } catch (Exception $e) {
+        return FALSE;
     }
-  }
-  return;
 }
 
 /**
  * Returns a list of trusted domains.
  */
 function mailjet_user_domain_list() {
-  $mailjet = mailjet_new();
-  $params = array(
-    'method' => 'GET',
-    'style' => 'full',
-    'limit' => 0
-  );
-  $response = $mailjet->sender($params)->getResponse();
-  if ($response && isset($response->Count) && $response->Count > 0) {
-    $domains = array();
-    foreach ($response->Data as $sender) {
-      if (!empty($sender->DNS) and ! array_key_exists($sender->DNS->Domain, $domains) && strpos($sender->Email->Email, "*@") !== FALSE) {
-        $domains[$sender->DNS->Domain] = $sender;
-      }
+
+    $mailjetApiClient = mailjet_new();
+    $filters = [
+        'style' => 'full',
+        'limit' => 0,
+    ];
+    $response = $mailjetApiClient->get(Resources::$Sender, ['filters' => $filters]);
+    if ($response->success()) {
+        $senders = $response->getData();
+        $domains = [];
+        foreach ($senders as $sender) {
+            if (!empty($sender['DNS']) and !array_key_exists($sender['DNS']['Domain'], $domains) && strpos($sender['Email']['Email'], "*@") !== FALSE) {
+                $domains[$sender['DNS']['Domain']] = $sender;
+            }
+        }
+        return $domains;
+    } else {
+        return false;
     }
-    return $domains;
-  }
-  else {
-    return FALSE;
-  }
 }
+
 
 /**
  * Gets trusted email domains.
  */
 function mailjet_get_a_trusted_email() {
-  $mailjet = mailjet_new();
+    $mailjetApiClient = mailjet_new();
 
-  $params = array(
-    'method' => 'GET',
-    'style' => 'full'
-  );
-  $response = $mailjet->sender($params)->getResponse();
-
-  if ($response && isset($response->Count) && $response->Count > 0) {
-    foreach ($response->Data as $email_object) {
-      if ($email_object->Status == 'Active') {
-        return $email_object->Email->Email;
-      }
+    $filters = [
+        'style' => 'full'
+    ];
+    $response = $mailjetApiClient->get(Resources::$Sender, ['filters' => $filters]);
+    if ($response->success()) {
+        $senders = $response->getData();
+        foreach ($senders as $emailObject) {
+            if ($emailObject['Status'] == 'Active') {
+                return $emailObject['Email']['Email'];
+            }
+        }
     }
-  }
 
-  return variable_get('site_mail', '');
+    return variable_get('site_mail', '');
 }
+
 
 /**
  * Add a trusted domain
@@ -483,25 +484,25 @@ function mailjet_get_a_trusted_email() {
  * @return boolean
  */
 function mailjet_user_domain_add($domain) {
-  $mailjet = mailjet_new();
-  if (strpos($domain, '@') === FALSE) {
-    $domain = '*@' . $domain;
-  }
+    $mailjetApiClient = mailjet_new();
+    if (strpos($domain, '@') === FALSE) {
+        $domain = '*@' . $domain;
+    }
 
-  $params = array(
-    'method' => 'JSON',
-    'Email' => $domain
-  );
+    $body = [
+        'Email' => $domain,
+    ];
 
-  $response = $mailjet->sender($params)->getResponse();
-  if ($response && isset($response->Count) && $response->Count > 0) {
-    return TRUE;
-  }
-  else {
-    drupal_set_message(t($response->ErrorMessage), 'error');
-    return FALSE;
-  }
+    $response = $mailjetApiClient->post(Resources::$Sender, ['body' => $body]);
+    if ($response->success()) {
+        return TRUE;
+    }
+    else {
+        drupal_set_message(t($response->getReasonPhrase()), 'error');
+        return FALSE;
+    }
 }
+
 
 /**
  * Check a domain
@@ -510,26 +511,26 @@ function mailjet_user_domain_add($domain) {
  * @return boolean
  */
 function mailjet_user_domain_status($domain) {
-  $mailjet = mailjet_new();
+    $mailjetApiClient = mailjet_new();
 
-  if (strpos($domain, '@') === FALSE) {
-    $domain = '*@' . $domain;
-  }
+    if (strpos($domain, '@') === FALSE) {
+        $domain = '*@' . $domain;
+    }
 
-  $params = array(
-    'method' => 'JSON',
-    'Email' => $domain
-  );
+    $body = [
+        'Email' => $domain,
+    ];
 
-  $response = $mailjet->sender($params)->getResponse();
 
-  if ($response && isset($response->Count) && $response->Count > 0) {
-    return TRUE;
-  }
-  else {
-    return FALSE;
-  }
+    $response = $mailjetApiClient->post(Resources::$Sender, ['body' => $body]);
+    if ($response->success()) {
+        return TRUE;
+    }
+    else {
+        return FALSE;
+    }
 }
+
 
 /**
  * Checks for same names.
@@ -608,58 +609,40 @@ function mailjet_properties_sync($new_field = NULL, $delete = FALSE) {
 
   //get existing contact properties from MailJet
   $properties = array();
-  $mj = mailjet_new();
-  $params = array(
-    'method' => 'GET',
-    'limit' => 0
-  );
-  $response = $mj->ContactMetaData($params)->getResponse();
-  if ($response && isset($response->Count) && $response->Count >= 0) {
-    foreach ($response->Data as $property) {
-      $properties[$property->Name] = (array) $property;
+  $mailjetApiClient = mailjet_new();
+  $response = MailjetApi::getContactProperties();
+  if (false != $response) {
+    foreach ($response as $property) {
+      $properties[$property['Name']] = (array) $property;
     }
   }
   else {
-    drupal_set_message(t('Couldn\'t reach Mailjet to retrieve existing contact properties! Please try again later or contact Maijet!'), 'error');
+    drupal_set_message(t('Couldn\'t reach MailJet to retrieve existing contact properties! Please try again later or contact MailJet!'), 'error');
   }
 
-  //sync Drupal fields to MJ properties
+    //sync Drupal fields to MJ properties
   foreach ($user_fields as $field) {
     if (array_key_exists($field['Name'], $properties)) {
       if ($field['Datatype'] == $properties[$field['Name']]['Datatype']) {
-        //drupal_set_message(t('Field '.$field['Name'].' is already in your Mailjet account.'),'status'); // no need of this message - too much spam :)
+        //drupal_set_message(t('Field '.$field['Name'].' is already in your MailJet account.'),'status'); // no need of this message - too much spam :)
       }
       else {
-        $update_params = array(
-          'method' => 'JSON',
-          'ID' => $properties[$field['Name']]['ID'],
-          'Name' => $field['Name'],
-          'DataType' => $field['Datatype'],
-        );
-        $update_response = $mj->ContactMetaData($update_params)->getResponse();
-        if ($update_response && $update_response->Count >= 0) {
-          drupal_set_message(t('Field ' . $field['Name'] . ' is now updated in your Mailjet account!'), 'status');
+          $updateResponse = MailjetApi::updateMailjetContactProperty($properties[$field['Name']]['ID'], $field['Name'], $field['Datatype']);
+        if (false != $updateResponse) {
+          drupal_set_message(t('Field ' . $field['Name'] . ' in now updated in your MailJet account!'), 'status');
         }
         else {
-          //drupal_set_message(t('Couldn\'t update '.$field['Name'].' in your Mailjet account!'),'error');
-          form_set_error('', 'Couldn\'t update ' . $field['Name'] . ' in your Mailjet account!');
+          drupal_set_message(t('Couldn\'t update ' . $field['Name'] . ' in your MailJet account!'), 'error');
         }
       }
     }
     else {
-      $insert_params = array(
-        'method' => 'JSON',
-        'Name' => $field['Name'],
-        'DataType' => $field['Datatype'],
-        'NameSpace' => 'static',
-      );
-      $insert_response = $mj->ContactMetaData($insert_params)->getResponse();
-      if ($insert_response && $insert_response->Count >= 0) {
-        drupal_set_message(t('Field ' . $field['Name'] . ' is now inserted in your Mailjet account!'), 'status');
+      $insertResponse = MailjetApi::createMailjetContactProperty($field['Name'], $field['Datatype']);
+      if (false != $insertResponse) {
+        drupal_set_message(t('Field ' . $field['Name'] . ' in now inserted in your MailJet account!'), 'status');
       }
       else {
-        //drupal_set_message(t('Couldn\'t insert '.$field['Name'].' in your Mailjet account!'),'error');
-        form_set_error('', 'Couldn\'t insert ' . $field['Name'] . ' in your Mailjet account!');
+        drupal_set_message(t('Couldn\'t update ' . $field['Name'] . ' in your MailJet account!'), 'error');
       }
     }
   }
@@ -696,16 +679,15 @@ function mailjet_user_delete($infos) {
 }
 
 function mailjet_user_cancel($infos) {
-  mailjet_sync_single_user($infos, 'update');
+  mailjet_sync_single_user($infos, 'remove');
 }
 
-function mailjet_sync_single_user($infos, $type) {
+function mailjet_sync_single_user($infos, $action) {
   if (!variable_get('mailjet_properties_sync', TRUE)) {
     return;
   }
 
-  mailjet_properties_sync();
-  $mailjet = mailjet_new();
+  $mailjetApiClient = mailjet_new();
 
   $user = get_sync_info($infos);
   $mj_lists = array();
@@ -713,202 +695,48 @@ function mailjet_sync_single_user($infos, $type) {
     $mj_lists = explode(",", $user[$infos['mail']]['mj_lists']);
     $mj_lists = array_diff($mj_lists, array(''));
   }
-  //if (!empty($defaul_mj_list)) {
-  $mj_lists[] = mailjet_get_default_list_id($mailjet);
-  //}
+  // Add the default list as well
+  $mj_lists[] = mailjet_get_default_list_id($mailjetApiClient);
 
-  switch ($type) {
+  mailjet_properties_sync();
+
+  switch ($action) {
     case 'add':
-      foreach ($mj_lists as $key => $value) {
-        //add new email
-        $add_params = array(
-          'method' => 'POST',
-          'Action' => 'Add',
-          'Force' => TRUE,
-          'Addresses' => array($infos['mail']),
-          'ListID' => $value
-        );
-        $mailjet->resetRequest();
-        $response = $mailjet->manycontacts($add_params)->getResponse();
-        if ($response && isset($response->Count) && $response->Count > 0) {
-          watchdog('mailjet_messages', 'The new contact was added to list #' . $value . '.');
-          $contact_id = $response->Data[0]->Recipients->Items[0]->Contact->ID;
-
-          // Get the data which we have to update. The data will be extracted from the user's object or $info variable
-          $data = array();
-          if (is_array($user) && isset($user[$infos['mail']])) {
-            foreach ($user[$infos['mail']]['properties'] as $prop_key => $prop_value) {
-              $data[] = array(
-                'Name' => str_replace("field_", "", $prop_key),
-                'Value' => $prop_value
-              );
-            }
-          }
-          else {
-            foreach ($infos as $key => $info) {
-              if (strpos($key, 'field_') !== FALSE && isset($info['und'][0]['value'])) {
-                $data[] = array(
-                  'Name' => str_replace("field_", "", $key),
-                  'Value' => $info['und'][0]['value']
-                );
-              }
-            }
-          }
-          if (!empty($data)) {
-            $data_params = array(
-              'method' => 'JSON',
-              'ContactID' => $contact_id,
-              'ID' => $contact_id,
-              'Data' => $data
-            );
-            $mailjet->resetRequest();
-            $response = $mailjet->contactdata($data_params)->getResponse();
-            if ($response && isset($response->Count) && $response->Count > 0) {
-              drupal_set_message(t('Contact data was synced.'), 'status');
-            }
-            else {
-              drupal_set_message(t('Contact data was not synced.'), 'error');
-            }
-          }
-        }
-        else {
-          watchdog('mailjet_messages', 'The new contact was not added to list #' . $value . '.');
-        }
-      }
-      break;
     case 'update':
-      if (isset($infos['mail']) && $infos['mail'] != $infos['original']->mail) {
-        foreach ($mj_lists as $key => $value) {
-          //add new email
-          $add_params = array(
-            'method' => 'POST',
-            'Action' => 'Add',
-            'Force' => TRUE,
-            'Addresses' => array($infos['mail']),
-            'ListID' => $value
-          );
-
-          $mailjet->resetRequest();
-          $response = $mailjet->manycontacts($add_params)->getResponse();
-
-          if ($response && isset($response->Count) && $response->Count > 0) {
-            watchdog('mailjet_messages', 'The new contact was added to list #' . $value . '.');
-            $contact_id = $response->Data[0]->Recipients->Items[0]->Contact->ID;
-
-            // Get the data which we have to update. The data will be extracted from the user's object or $info variable
-            $data = array();
-            if (is_array($user) && isset($user[$infos['mail']])) {
-              foreach ($user[$infos['mail']]['properties'] as $prop_key => $prop_value) {
-                $data[] = array(
-                  'Name' => str_replace("field_", "", $prop_key),
-                  'Value' => $prop_value
-                );
-              }
-            }
-            else {
-              foreach ($infos as $key => $info) {
-                if (strpos($key, 'field_') !== FALSE && isset($info['und'][0]['value'])) {
-                  $data[] = array(
-                    'Name' => str_replace("field_", "", $key),
-                    'Value' => $info['und'][0]['value']
-                  );
-                }
-              }
-            }
-            if (!empty($data)) {
-              $data_params = array(
-                'method' => 'JSON',
-                'ContactID' => $contact_id,
-                'ID' => $contact_id,
-                'Data' => $data
-              );
-              $mailjet->resetRequest();
-              $response = $mailjet->contactdata($data_params)->getResponse();
-              if ($response && isset($response->Count) && $response->Count > 0) {
-                drupal_set_message(t('Contact data was synced.'), 'status');
-              }
-              else {
-                drupal_set_message(t('Contact data was not synced.'), 'error');
-              }
-            }
-          }
-          else {
-            watchdog('mailjet_messages', 'The new contact was not added to list #' . $value . '.');
-          }
-
-          $unsub_params = array(
-            'method' => 'POST',
-            'Action' => 'Unsubscribe',
-            'Addresses' => array($infos['original']->mail),
-            'ListID' => $value
-          );
-
-          $mailjet->resetRequest();
-          $response = $mailjet->manycontacts($unsub_params)->getResponse();
-
-          if ($response && isset($response->Count) && $response->Count > 0) {
-            watchdog('mailjet_messages', 'The contact was unsubscribed to list #' . $value . '.');
-          }
-          else {
-            watchdog('mailjet_messages', 'The contact was not unsubscribed to list #' . $value . '.');
-          }
-        }
-      }
-      else {
-        //get contact ID
-        if (empty($infos['mail'])) {
-          return;
-        }
-        $contact_params = array(
-          'method' => 'GET',
-          'ID' => $infos['mail']
-        );
-        $mailjet->resetRequest();
-        $response = $mailjet->contact($contact_params)->getResponse();
-
-        if ($response && isset($response->Count) && $response->Count == 1) {
-          $contact_id = $response->Data[0]->ID;
-
+      foreach ($mj_lists as $key => $value) {
           // Get the data which we have to update. The data will be extracted from the user's object or $info variable
           $data = array();
           if (is_array($user) && isset($user[$infos['mail']])) {
-            foreach ($user[$infos['mail']]['properties'] as $prop_key => $prop_value) {
-              $data[] = array(
-                'Name' => str_replace("field_", "", $prop_key),
-                'Value' => $prop_value
-              );
-            }
-          }
-          else {
-            foreach ($infos as $key => $info) {
-              if (strpos($key, 'field_') !== FALSE && isset($info['und'][0]['value'])) {
-                $data[] = array(
-                  'Name' => str_replace("field_", "", $key),
-                  'Value' => $info['und'][0]['value']
-                );
+              foreach ($user[$infos['mail']]['properties'] as $prop_key => $prop_value) {
+                  $data[] = array(
+                      'Name' => str_replace("field_", "", $prop_key),
+                      'Value' => $prop_value
+                  );
               }
-            }
+          } else {
+              foreach ($infos as $key => $info) {
+                  if (strpos($key, 'field_') !== FALSE && isset($info['und'][0]['value'])) {
+                      $data[] = array(
+                          'Name' => str_replace("field_", "", $key),
+                          'Value' => $info['und'][0]['value']
+                      );
+                  }
+              }
           }
+
+          $contact = [
+              'Email' => $infos['mail']
+          ];
           if (!empty($data)) {
-            $data_params = array(
-              'method' => 'JSON',
-              'ContactID' => $contact_id,
-              'ID' => $contact_id,
-              'Data' => $data
-            );
-            $mailjet->resetRequest();
-            $response = $mailjet->contactdata($data_params)->getResponse();
-            if ($response && isset($response->Count) && $response->Count > 0) {
-              drupal_set_message(t('Contact data was synced.'), 'status');
-            }
-            else {
-              drupal_set_message(t('Contact data was not synced.'), 'error');
-            }
+              $contact['Properties'] = $data;
           }
-        }
-        else {
-          drupal_set_message(t('Could not get contact info from Mailjet.'), 'error');
-        }
+          //add new email
+          $response = MailjetApi::syncMailjetContact($value, $contact);
+          if (false != $response) {
+              drupal_set_message(t('Contact data was synced.'), 'status');
+          } else {
+              drupal_set_message(t('Contact data was not synced.'), 'error');
+          }
       }
       break;
     case 'remove':
@@ -916,19 +744,17 @@ function mailjet_sync_single_user($infos, $type) {
         return;
       }
       foreach ($mj_lists as $key => $value) {
-        $unsub_params = array(
-          'method' => 'POST',
-          'Action' => 'Unsubscribe',
-          'Addresses' => array($infos['mail']),
-          'ListID' => $value
-        );
-        $mailjet->resetRequest();
-        $response = $mailjet->manycontacts($unsub_params)->getResponse();
-        if ($response && isset($response->Count) && $response->Count > 0) {
-          watchdog('mailjet_messages', 'The new contact was unsubscribed from list #' . $value . '.');
+
+        $contact = [
+          'Email' => $infos['mail']
+        ];
+        //add new email
+        $response = MailjetApi::syncMailjetContact($value, $contact, 'remove');
+        if (false == $response) {
+            watchdog('mailjet_messages', 'The new contact was unsubscribed from list #' . $value . '.');
         }
         else {
-          watchdog('mailjet_messages', 'The new contact was not unsubscribed from list #' . $value . '.');
+            watchdog('mailjet_messages', 'The new contact was not unsubscribed from list #' . $value . '.');
         }
       }
       break;
@@ -1036,39 +862,35 @@ function get_sync_info($infos) {
 /**
  * Checks if batch process is running.
  */
-function is_batchjob_running($bj_id) {
-  $mailjet = mailjet_new();
-  $params_batch_job_check = array(
-    'method' => 'GET', // JSON
-    'ID' => $bj_id,
-    'APIKeyALT' => variable_get('mailjet_username')
-  );
-  $mailjet->resetRequest();
-  $response_batch_job_check = $mailjet->batchjob($params_batch_job_check)->getResponse();
+function is_batchjob_running($bjID) {
+    $mailjetApiClient = mailjet_new();
+    $filters = [
+        'APIKeyALT' => variable_get('mailjet_username'),
+    ];
+    $responseBatchJobCheck = $mailjetApiClient->get(Resources::$Batchjob, ['id' => $bjID, 'filters' => $filters]);
+    if ($responseBatchJobCheck->success()) {
+        $responseBatchJobCheckData = $responseBatchJobCheck->getData();
+    }
+    if (!empty($responseBatchJobCheckData[0]['Status']) && $responseBatchJobCheckData[0]['Status'] == "Completed") {
+        return FALSE;
+    }
 
-  if (!empty($response_batch_job_check->Data[0]->Status) && $response_batch_job_check->Data[0]->Status == "Completed") {
-    return FALSE;
-  }
-  else {
     return TRUE;
-  }
 }
 
 /**
  * Gets Mailjet list id.
  */
-function mailjet_get_default_list_id($mailjet) {
-  $getlist_params = array(
-    'method' => 'GET',
-    'Name' => mailjet_get_default_list_name()
-  );
-  $mailjet->resetRequest();
-  // Gets Mailjet contact list by name
-  $contact_lists = $mailjet->contactslist($getlist_params)->getResponse();
-  if ($contact_lists && $contact_lists->Count > 0) {
-    $def_list_id = $contact_lists->Data[0]->ID;
-  }
-  return empty($def_list_id) ? mailjet_create_default_list($mailjet) : $def_list_id;
+function mailjet_get_default_list_id($mailjetApiClient) {
+    $mailjetApiClient = mailjet_new();
+    // Gets Mailjet contact list by name
+    $contactsList = MailjetApi::getMailjetContactListByName(mailjet_get_default_list_name());
+
+    if (false != $contactsList) {
+        $def_list_id = $contactsList[0]['ID'];
+    }
+    return empty($def_list_id) ? mailjet_create_default_list() : $def_list_id;
+
 }
 
 function mailjet_get_default_list_name() {
@@ -1078,21 +900,18 @@ function mailjet_get_default_list_name() {
 /**
  * Create the default Drupal contact list if not existing.
  */
-function mailjet_create_default_list($mailjet) {
-  $listparams = array(
-    'method' => 'JSON',
-    'Name' => mailjet_get_default_list_name(),
-  );
-  $mailjet->resetRequest();
-  $response3 = $mailjet->contactslist($listparams)->getResponse();
-  if ($response3 && $response3->Count > 0) {
-    $def_list_id = $response3->Data[0]->ID;
-    drupal_set_message(t('Default list was created!'), 'status');
-  }
-  else {
-    drupal_set_message(t('Default list was not created! Please try again.'), 'error');
-  }
-  return empty($def_list_id) ? 0 : $def_list_id;
+function mailjet_create_default_list() {
+    $mailjetApiClient = mailjet_new();
+    $responseNewContactsList = MailjetApi::createMailjetContactList(mailjet_get_default_list_name());
+    if (false != $responseNewContactsList) {
+        $def_list_id = $responseNewContactsList[0]['ID'];
+        drupal_set_message(t('Default list was created!'), 'status');
+    }
+    else {
+        drupal_set_message(t('Default list was not created! Please try again.'), 'error');
+    }
+    return empty($def_list_id) ? 0 : $def_list_id;
+
 }
 
 /**
@@ -1107,83 +926,32 @@ function mailjet_first_sync($list_id) {
 
   //get all drupal users
   $users = entity_load('user');
-
-  $csv_str = "email,";
-  $cnt = 0;
+  $contacts = [];
   foreach ($users as $user_id => $user) {
     if ($user_id > 0 && $user->status > 0) {
+      $contact = [];
+      $properties = [];
+      $contact['Email'] = $user->mail;
       foreach ($user as $key => $value) {
         //ADD ALL FIELDS
         if (strpos($key, "field_") !== FALSE) {
-          if ($cnt < 1) {
-            $csv_str .= str_replace('field_', '', $key) . ",";
-          }
+          $properties[str_replace('field_', '', $key)] = ((!empty($value)) ? $value[LANGUAGE_NONE][0]['value'] : '');
         }
       }
-      $csv_str = substr($csv_str, 0, -1);
-      $csv_str .= "\n";
-
-      $csv_str .= $user->mail . ",";
-      foreach ($user as $key => $value) {
-        //ADD ALL FIELDS
-        if (strpos($key, "field_") !== FALSE) {
-          $csv_str .= ((!empty($value)) ? $value[LANGUAGE_NONE][0]['value'] : '') . ",";
-        }
+      if (!empty($properties)) {
+        $contact['Properties'] = $properties;
       }
-      $csv_str = substr($csv_str, 0, -1);
-      $csv_str .= "\n";
-      $cnt++;
+
+      $contacts[] = $contact;
     }
   }
 
-  $mailjet = mailjet_new();
-  //call to dataAPI to create the CSV
-  $mailjet->resetRequest();
-  $response_csv_data = $mailjet->data('contactslist', $list_id, 'CSVData', 'text/plain', $csv_str, 'POST', NULL)->getResponse();
-
-  if ($response_csv_data) {
-    $clid = json_decode($response_csv_data);
-
-    $mailjet->resetRequest();
-    $params_batch_job = array(
-      'method' => 'JSON', // JSON
-      'JobType' => 'Contact list import csv',
-      'DataID' => $clid->ID,
-      'Status' => 'Upload',
-      'RefId' => $list_id,
-      'Method' => 'addnoforce', // = 'addforce'
-      'APIKeyALT' => variable_get('mailjet_username')
-    );
-
-    $response_batch_job = $mailjet->batchjob($params_batch_job)->getResponse();
-
-    if ($response_batch_job && $response_batch_job->Count > 0) {
-      $bj_id = $response_batch_job->Data[0]->ID;
-      $params_batch_job_check = array(
-        'method' => 'GET', // JSON
-        'ID' => $bj_id,
-        'APIKeyALT' => variable_get('mailjet_username')
-      );
-      $mailjet->resetRequest();
-      $response_batch_job_check = $mailjet->batchjob($params_batch_job_check)->getResponse();
-
-      if ($response_batch_job_check && $response_batch_job_check->Data[0]->Status == "Completed") {
-        drupal_set_message(t('Sync is complete.'), 'status');
-      }
-      else {
-        $bj_ids = variable_get('runningBtachJobs', array());
-        $bj_ids[] = $bj_id;
-        variable_set('runningBtachJobs', $bj_ids);
-        drupal_set_message(t('Sync in progress.'), 'status');
-      }
-    }
-    else {
-      form_set_error('', 'Could not create a BatchJob for this import');
-    }
+  $responseInitialSync = MailjetApi::syncMailjetContacts($list_id, $contacts);
+  if (false == $responseInitialSync) {
+    drupal_set_message(t('Could not create the contact list'));
   }
-  else {
-    form_set_error('', 'Could not create the contact list');
-  }
+
+  drupal_set_message(t('Sync in progress.'), 'status');
 }
 
 /**
@@ -1211,66 +979,86 @@ function mailjet_menu_breadcrumb_alter(&$active_trail, $item) {
 
 // Getter functions - LISTS and Properties
 function mailjet_get_lists() {
-  $contact_lists2 = array();
+    $contact_lists = [];
 
-  $mailjet = mailjet_new();
-  $counter_contact = 0;
-  $getlist_params = array(
-    'method' => 'GET',
-    'limit' => get_mailjet_get_lists_limit(),
-  );
-  $contact_lists = $mailjet->contactslist($getlist_params)->getResponse();
-  if (!empty($contact_lists) && is_array($contact_lists->Data)) {
-    foreach ($contact_lists->Data as $list) {
-      $contact_lists2[$list->ID] = $list->Name;
-      $counter_contact++;
+    $mailjetApiClient = mailjet_new();
+    $contactsListResponse = MailjetApi::getMailjetContactLists(get_mailjet_get_lists_limit());
+    if (false != $contactsListResponse) {
+        foreach ($contactsListResponse as $list) {
+            $contact_lists[$list['ID']] = $list['Name'];
+        }
     }
-  }
-  return $contact_lists2;
+
+    return $contact_lists;
 }
 
 function get_mailjet_get_lists_limit() {
     return 500;
 }
 
-function mailjet_get_propertiy_name($property_name) {
-  //get existing contact properties from MailJet
-  $properties = array();
-  $mj = mailjet_new();
-  $params = array(
-    'method' => 'GET',
-    'limit' => 0
-  );
-  $response = $mj->ContactMetaData($params)->getResponse();
-  if ($response && isset($response->Count) && $response->Count >= 0) {
-    foreach ($response->Data as $property) {
 
-      if ($property->Name == $property_name) {
-        return $property->Datatype;
-        break;
-      }
+function mailjet_get_property_name($id) {
+    $mailjet_properties = mailjet_get_properties();
+    $counter_prop = 0;
+
+    foreach ($mailjet_properties as $key => $prop) {
+
+        if (strpos($prop, 'message') !== FALSE) {
+            unset($mailjet_properties[$key]);
+        }
+        elseif (strpos($prop, 'commerce') !== FALSE) {
+            unset($mailjet_properties[$key]);
+        }
+        elseif (strpos($prop, 'mailjet') !== FALSE) {
+            unset($mailjet_properties[$key]);
+        }
+        elseif (strpos($prop, 'signup') !== FALSE) {
+            unset($mailjet_properties[$key]);
+        }
     }
-  }
+
+    $conctact_prop = [];
+    foreach ($mailjet_properties as $key => $prop) {
+        $contact_prop[$counter_prop] = $prop;
+        $counter_prop++;
+    }
+
+    return $contact_prop[$id];
 }
+
+
+function mailjet_get_property_type($property_name) {
+    //get existing contact properties from MailJet
+    $properties = [];
+    $mailjetApiClient = mailjet_new();
+    $response = MailjetApi::getMailjetContactProperties();
+    if (false != $response) {
+        foreach ($response as $property) {
+            if ($property['Name'] == $property_name) {
+                return $property['Datatype'];
+                break;
+            }
+        }
+    }
+}
+
 
 // get names of contact properties
 function mailjet_get_properties() {
-  //get existing contact properties from MailJet
-  $properties = array();
-  $mj = mailjet_new();
-  $params = array(
-    'method' => 'GET',
-    'limit' => 0
-  );
-  $response = $mj->ContactMetaData($params)->getResponse();
-  if ($response && isset($response->Count) && $response->Count >= 0) {
-    foreach ($response->Data as $property) {
-      $properties[$property->Name] = $property->Name;
+    //get existing contact properties from MailJet
+    $properties = [];
+    $mailjetApiClient = mailjet_new();
+    $response = MailjetApi::getMailjetContactProperties();
+    if (false != $response) {
+        foreach ($response as $property) {
+            $properties[$property['Name']] = $property['Name'];
+        }
     }
-  }
 
-  return $properties;
+
+    return $properties;
 }
+
 
 /**
  * Implements view callback function
@@ -1292,26 +1080,24 @@ function mailjet_roi_stats() {
  * Implements function for find a contact in some contact list
  */
 function mailjet_find_conctact($email, $list_id) {
-  $mj = mailjet_new();
-  $response=true;
+    $mailjetApiClient = mailjet_new();
+    $response = TRUE;
 
-  $contact_params = array(
-    'method' => 'GET',
-    'ContactEmail' => $email,
-    'ContactsList' => $list_id
-  );
+    $filters = [
+        'ContactEmail' => $email,
+        'ContactsList' => $list_id,
+    ];
 
-  $result = $mj->listrecipient($contact_params);
-
-  if ($result->getResponse()->Count < 1) {
-    $response = false;
-  }
-
-  if (!empty($result->getResponse()->Data) && $result->getResponse()->Data[0]->IsUnsubscribed == 1) {
-    $response = false;
-  }
-
-  return $response;
+    $result = $mailjetApiClient->get(Resources::$Listrecipient, ['filters' => $filters]);
+    if ($result->success() && $result->getCount() > 0) {
+        $data = $result->getData();
+        if (isset($data[0]['IsUnsubscribed']) && true == $data[0]['IsUnsubscribed']) {
+            $response = FALSE;
+        }
+    } else {
+        $response = FALSE;
+    }
+    return $response;
 }
 
 
