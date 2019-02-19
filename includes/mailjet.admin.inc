@@ -5,6 +5,9 @@
  * The backoffice of module.
  */
 
+use Mailjet\Resources;
+use MailjetTools\MailjetApi;
+
 /**
  * Settings form callback
  */
@@ -79,13 +82,13 @@ function mailjet_admin_settings_form() {
       );
       $tracking_url = variable_get("mj_callback_url");
       $current_events = array();
-      foreach ($tracking_check->Data as $event) {
-        if (array_key_exists($event->EventType, $check)) {
-          $check[$event->EventType] = 1;
-          $tracking_url = $event->Url;
-          $current_events[$event->EventType] = $event->ID;
+        foreach ($tracking_check as $event) {
+            if (array_key_exists($event['EventType'], $check)) {
+                $check[$event['EventType']] = 1;
+                $tracking_url = $event['Url'];
+                $current_events[$event['EventType']] = $event['ID'];
+            }
         }
-      }
       $current_events = serialize($current_events);
 
       $form['tracking']['tracking_open'] = array(
@@ -473,29 +476,21 @@ function mailjet_api_form($form_state) {
  * API form validate
  */
 function mailjet_api_form_validate($form, $form_state) {
-  module_load_include('api.inc', 'mailjet');
-  $mailjet = new Mailjet($form_state['values']['mailjet_username'], $form_state['values']['mailjet_password']);
+  $mailjetApiClient = MailjetApi::getApiClient($form_state['values']['mailjet_username'], $form_state['values']['mailjet_password']);
+  $response = $mailjetApiClient->get(Resources::$Myprofile);
 
-  $params_prrofile = array(
-    'method' => 'GET',
-  );
-
-  $response = $mailjet->myprofile($params_prrofile)->getResponse();
-
-  if ($response) {
+  if ($response->success()) {
     variable_set('mailjet_active', TRUE);
-
-    $params = array(
+    $params = [
       'AllowedAccess' => 'campaigns,contacts,stats,pricing,account,reports',
-      'method' => 'JSON',
-      'APIKeyALT' => $mailjet->getAPIKey(),
+      'APIKeyALT' => $form_state['values']['mailjet_username'],
       'TokenType' => 'iframe',
-      'IsActive' => true
-    );
-    $mailjet->resetRequest();
-    $response2 = $mailjet->apitoken($params)->getResponse();
-    if ($response2->Count > 0) {
-      variable_set('APItoken', $response2->Data[0]->Token);
+      'IsActive' => TRUE,
+    ];
+
+    $responseApiToken = MailjetApi::createApiToken($params);
+    if (false != $responseApiToken) {
+      variable_set('APItoken', $responseApiToken[0]['Token']);
       variable_set('mailjet_username', $form_state['values']['mailjet_username']);
       variable_set('mailjet_password', $form_state['values']['mailjet_password']);
       mailjet_first_sync(mailjet_get_default_list_id(mailjet_new()));
@@ -528,21 +523,21 @@ function mailjet_domain_form($form_state) {
   );
 
   $options = array();
-  if ($domains = mailjet_user_domain_list()) {
-    foreach ($domains as $domain) {
-      if (is_object($domain->Email)) {
-        $email = $domain->Email->Email;
-      }
-      else {
-        $email = $domain->Email;
-      }
-      $options[$email] = array(
-        'domain' => str_replace('*@', '', $email),
-        'enabled' => $domain->Status,
-        'file_name' => $domain->Filename
-      );
+    if ($domains = mailjet_user_domain_list()) {
+        foreach ($domains as $domain) {
+            if (is_array($domain['Email'])) {
+              $email = $domain['Email']['Email'];
+            }
+            else {
+              $email = $domain['Email'];
+            }
+            $options[$email] = array(
+                'domain' => str_replace('*@', '', $email),
+                'enabled' => isset($domain['Status']) ? $domain['Status'] : '',
+                'file_name' => isset($domain['Filename']) ? $domain['Filename'] : '',
+            );
+        }
     }
-
     $form['domains'] = array(
       '#type' => 'tableselect',
       '#header' => $header,
@@ -558,7 +553,6 @@ function mailjet_domain_form($form_state) {
     $form['#submit'][] = 'mailjet_domain_form_submit';
 
     return $form;
-  }
 }
 
 /**
