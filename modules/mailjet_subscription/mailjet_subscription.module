@@ -432,14 +432,14 @@ function mailjet_subscription_form($form, &$form_state) {
 
   $form['field_js'] = array(
     '#type' => 'textarea',
-    '#title' => t('Enter your inline JS here.'),
+    '#title' => t('Enter your inline JS'),
     '#description' => '',
     '#default_value' => (isset($default_field_js) && !empty($default_field_js)) ? $default_field_js : FALSE,
   );
 
   $form['field_css'] = array(
     '#type' => 'textarea',
-    '#title' => t('Enter your inline CSS here.'),
+    '#title' => t('Enter your inline CSS'),
     '#description' => '',
     '#default_value' => (isset($default_field_css) && !empty($default_field_css)) ? $default_field_css : FALSE,
   );
