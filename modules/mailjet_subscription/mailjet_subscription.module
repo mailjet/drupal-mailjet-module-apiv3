@@ -91,7 +91,6 @@ function mailjet_subscription_signup_settings() {
 	 <thead><tr><th>'.t('ID/Entity').'</th><th>'.t('Title').'</th><th>'.t('Created').'</th><th>'.t('Updated').'</th><th colspan="2"><center>'.t('Operations').'</center></th> </tr></thead><tbody>';
 
     foreach ($signup_forms as $form) {
-
       $signup_forms_results .='<tr class="odd"><td style="width:50px;text-align:center;" >' . $form->id . '</td><td>' . $form->title . '</td><td>' . date('m/d/Y', $form->created) . '</td><td>' . date('m/d/Y', $form->updated) . '</td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-settings/add-form?entity_id=' . $form->id . '" >Edit</a></td><td><a href="' . $base_url . '/admin/config/system/mailjet/signup-settings/edit-labels?entity_id=' . $form->id . '" >Edit field labels</a></td></tr>';
     }
     $signup_forms_results .= '</tbody></table>';
