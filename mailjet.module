@@ -368,12 +368,12 @@ function mailjet_user_infos() {
 /**
  * Update the user infos.
  *
- * @param unknown $infos
+ * @param unknown $user
  * @return boolean
  */
-function mailjet_mjuser_update($infos) {
+function mailjet_mjuser_update($user) {
     $mailjetApiClient = mailjet_new();
-    $response = $mailjetApiClient->put(Resources::$Myprofile, ['body' => $infos]);
+    $response = $mailjetApiClient->put(Resources::$Myprofile, ['body' => $user]);
     return ($response->success()) ? TRUE : FALSE;
 }
 
@@ -652,21 +652,21 @@ function mailjet_properties_sync($new_field = NULL, $delete = FALSE) {
 /**
  * Sync user hooks.
  */
-function mailjet_user_insert($infos) {
-  mailjet_sync_single_user($infos, 'add');
+function mailjet_user_insert($user) {
+  mailjet_sync_single_user($user, 'add');
 }
 
 /**
  * Updates Mailjet users
  */
-function mailjet_user_update($infos) {
+function mailjet_user_update($user) {
   // Only trigger updates when the account status has changed.
-  if (isset($infos['status'])) {
-    if ($infos['status'] > 0) { //should be the same as cancel hook
-      mailjet_sync_single_user($infos, 'update');
+  if (isset($user['status'])) {
+    if ($user['status'] > 0) { //should be the same as cancel hook
+      mailjet_sync_single_user($user, 'update');
     }
     else {
-      mailjet_sync_single_user($infos, 'remove');
+      mailjet_sync_single_user($user, 'remove');
     }
   }
 }
@@ -674,25 +674,27 @@ function mailjet_user_update($infos) {
 /**
  * Deletes mailjet user.
  */
-function mailjet_user_delete($infos) {
-  mailjet_sync_single_user((array) $infos, 'remove');
+function mailjet_user_delete($user) {
+  mailjet_sync_single_user((array) $user, 'remove');
 }
 
-function mailjet_user_cancel($infos) {
-  mailjet_sync_single_user($infos, 'remove');
+function mailjet_user_cancel($user) {
+  mailjet_sync_single_user($user, 'remove');
 }
 
-function mailjet_sync_single_user($infos, $action) {
+function mailjet_sync_single_user($user, $action) {
   if (!variable_get('mailjet_properties_sync', TRUE)) {
+    return;
+  }
+  if (empty($user['mail'])) {
     return;
   }
 
   $mailjetApiClient = mailjet_new();
 
-  $user = get_sync_info($infos);
   $mj_lists = array();
-  if (is_array($user) && isset($infos['mail']) && isset($user[$infos['mail']])) {
-    $mj_lists = explode(",", $user[$infos['mail']]['mj_lists']);
+  if (is_array($user) && isset($user['mail']) && isset($user[$user['mail']])) {
+    $mj_lists = explode(",", $user[$user['mail']]['mj_lists']);
     $mj_lists = array_diff($mj_lists, array(''));
   }
   // Add the default list as well
@@ -700,61 +702,43 @@ function mailjet_sync_single_user($infos, $action) {
 
   mailjet_properties_sync();
 
+  $contact = [
+    'Email' => $user['mail']
+  ];
+
   switch ($action) {
     case 'add':
     case 'update':
-      foreach ($mj_lists as $key => $value) {
-          // Get the data which we have to update. The data will be extracted from the user's object or $info variable
-          $data = array();
-          if (is_array($user) && isset($user[$infos['mail']])) {
-              foreach ($user[$infos['mail']]['properties'] as $prop_key => $prop_value) {
-                  $data[] = array(
-                      'Name' => str_replace("field_", "", $prop_key),
-                      'Value' => $prop_value
-                  );
-              }
-          } else {
-              foreach ($infos as $key => $info) {
-                  if (strpos($key, 'field_') !== FALSE && isset($info['und'][0]['value'])) {
-                      $data[] = array(
-                          'Name' => str_replace("field_", "", $key),
-                          'Value' => $info['und'][0]['value']
-                      );
-                  }
-              }
+      foreach ($mj_lists as $listId) {
+        foreach ($user as $propertyName => $propertyValue) {
+          // We sync оnly `name` for now
+          if ('name' == $propertyName) {
+            $properties[$propertyName] = $propertyValue;
           }
+        }
+        if (!empty($properties)) {
+          $contact['Properties'] = $properties;
+        }
 
-          $contact = [
-              'Email' => $infos['mail']
-          ];
-          if (!empty($data)) {
-              $contact['Properties'] = $data;
-          }
-          //add new email
-          $response = MailjetApi::syncMailjetContact($value, $contact);
-          if (false != $response) {
-              drupal_set_message(t('Contact data was synced.'), 'status');
-          } else {
-              drupal_set_message(t('Contact data was not synced.'), 'error');
-          }
+        //add new email
+        $response = MailjetApi::syncMailjetContact($listId, $contact);
+        if (false != $response) {
+            drupal_set_message(t('Contact data was synced.'), 'status');
+        } else {
+            drupal_set_message(t('Contact data was not synced.'), 'error');
+        }
       }
       break;
-    case 'remove':
-      if (empty($infos['mail'])) {
-        return;
-      }
-      foreach ($mj_lists as $key => $value) {
 
-        $contact = [
-          'Email' => $infos['mail']
-        ];
+    case 'remove':
+      foreach ($mj_lists as $listId) {
         //add new email
-        $response = MailjetApi::syncMailjetContact($value, $contact, 'remove');
+        $response = MailjetApi::syncMailjetContact($listId, $contact, 'remove');
         if (false == $response) {
-            watchdog('mailjet_messages', 'The new contact was unsubscribed from list #' . $value . '.');
+            watchdog('mailjet_messages', 'The new contact was unsubscribed from list #' . $listId . '.');
         }
         else {
-            watchdog('mailjet_messages', 'The new contact was not unsubscribed from list #' . $value . '.');
+            watchdog('mailjet_messages', 'The new contact was not unsubscribed from list #' . $listId . '.');
         }
       }
       break;
@@ -767,7 +751,7 @@ function mailjet_sync_single_user($infos, $action) {
 /**
  * Get sync user info.
  */
-function get_sync_info($infos) {
+function get_sync_info($user) {
   // get all Drupal views
   $views = views_get_all_views();
   $drupal_users = array();
@@ -782,10 +766,10 @@ function get_sync_info($infos) {
       //check if the email is part of this view
       $x = 0;
       while ($x != $total_rows) {
-        if ($infos['mail'] == $v->render_field($field, $x)) {
+        if ($user['mail'] == $v->render_field($field, $x)) {
           //get lists using this view
           $lists = "";
-          if ((isset($infos['original']) && $infos['mail'] != $infos['original']->mail) || $infos['is_new'] == 1) {
+          if ((isset($user['original']) && $user['mail'] != $user['original']->mail) || $user['is_new'] == 1) {
             $query = new EntityFieldQuery();
             $query->entityCondition('entity_type', 'mailjet_list');
             $res = $query->execute();
@@ -826,7 +810,7 @@ function get_sync_info($infos) {
       }
 
       // If the user status is changed to "BLOCKED" / "DELETED" - the user is ignored and it's not loaded in the view
-      if ($infos['status'] == 0) {
+      if ($user['status'] == 0) {
         $lists = "";
 
         $query = new EntityFieldQuery();
@@ -840,17 +824,17 @@ function get_sync_info($infos) {
           }
         }
 
-        if (array_key_exists($infos['mail'], $drupal_users)) {
-          $drupal_users[$infos['mail']]['mj_lists'] .= $lists;
+        if (array_key_exists($user['mail'], $drupal_users)) {
+          $drupal_users[$user['mail']]['mj_lists'] .= $lists;
         }
         else {
-          $drupal_users[$infos['mail']] = array(
-            'uid' => $infos['original']->uid,
-            'name' => $infos['original']->name,
-            'mail' => $infos['original']->mail,
-            'created' => $infos['original']->created
+          $drupal_users[$user['mail']] = array(
+            'uid' => $user['original']->uid,
+            'name' => $user['original']->name,
+            'mail' => $user['original']->mail,
+            'created' => $user['original']->created
           );
-          $drupal_users[$infos['mail']]['mj_lists'] = $lists;
+          $drupal_users[$user['mail']]['mj_lists'] = $lists;
         }
       }
     }
