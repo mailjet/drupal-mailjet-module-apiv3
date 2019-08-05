@@ -111,66 +111,68 @@ function mailjet_event_callback() {
   $post = trim(file_get_contents('php://input'));
 
   // Decode Trigger Informations.
-    $allEvents = json_decode($post, TRUE);
+  $allEvents = json_decode($post, TRUE);
 
-    /*
-     * If we get Version 1 event it is single array.
-     * Then we need to convert it to multi-array
-     * to reuse the same functionallity used for Version 2 (multi-array of events)
-     */
+  /*
+   * If we get Version 1 event it is single array.
+   * Then we need to convert it to multi-array
+   * to reuse the same functionallity used for Version 2 (multi-array of events)
+   */
     if (array_key_exists('event', $allEvents)) {
-        $allEvents = array($allEvents);
+      $allEvents = array($allEvents);
     }
 
     if (empty($allEvents)) {
-        drupal_not_found();
+      drupal_not_found();
     }
-    
+
     foreach ($allEvents as $key => $event) {
-        // No Informations sent with the Event.
-        if (!is_array($event) || !isset($event['event'])) {
-            drupal_not_found();
-        }
+      // No Informations sent with the Event.
+      if (!is_array($event) || !isset($event['event'])) {
+          drupal_not_found();
+      }
 
-        if (isset($event['email'])) {
-            $mail_user = user_load_by_mail($event['email']);
-        } elseif (isset($event['original_address'])) {
-            $mail_user = user_load_by_mail($event['original_address']);
-        }
+      if (isset($event['email'])) {
+          $mail_user = user_load_by_mail($event['email']);
+      } elseif (isset($event['original_address'])) {
+          $mail_user = user_load_by_mail($event['original_address']);
+      }
 
-        $mailjet_event = mailjet_event_new($mail_user, $event);
-        mailjet_event_save($mailjet_event);
+      $mailjet_event = mailjet_event_new($mail_user, $event);
+      mailjet_event_save($mailjet_event);
 
+      if (module_exists('rules')) {
         switch ($event['event']) {
-            case 'open' :
-                rules_invoke_event('mailjet_open', $mailjet_event);
+          case 'open' :
+            rules_invoke_event('mailjet_open', $mailjet_event);
+            break;
 
-                break;
-            case 'click' :
-                rules_invoke_event('mailjet_click', $mailjet_event);
-                break;
+          case 'click' :
+            rules_invoke_event('mailjet_click', $mailjet_event);
+            break;
 
-            case 'bounce' :
-                rules_invoke_event('mailjet_bounce', $mailjet_event);
-                break;
+          case 'bounce' :
+            rules_invoke_event('mailjet_bounce', $mailjet_event);
+            break;
 
-            case 'spam' :
-                rules_invoke_event('mailjet_spam', $mailjet_event);
-                break;
+          case 'spam' :
+            rules_invoke_event('mailjet_spam', $mailjet_event);
+            break;
 
-            case 'blocked' :
-                rules_invoke_event('mailjet_blocked', $mailjet_event);
-                break;
+          case 'blocked' :
+            rules_invoke_event('mailjet_blocked', $mailjet_event);
+            break;
 
-            case 'unsub' :
-                rules_invoke_event('mailjet_unsub', $mailjet_event);
-                break;
+          case 'unsub' :
+            rules_invoke_event('mailjet_unsub', $mailjet_event);
+            break;
 
-            // No handler
-            default :
-                drupal_not_found();
-                break;
+          // No handler
+          default :
+            drupal_not_found();
+            break;
         }
+      }
     }
   drupal_send_headers();
   drupal_exit();
