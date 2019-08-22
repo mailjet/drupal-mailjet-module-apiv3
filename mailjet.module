@@ -611,7 +611,7 @@ function mailjet_properties_sync($new_field = NULL, $delete = FALSE) {
   $properties = array();
   $mailjetApiClient = mailjet_new();
   $response = MailjetApi::getContactProperties();
-  if (false != $response) {
+  if (false !== $response) {
     foreach ($response as $property) {
       $properties[$property['Name']] = (array) $property;
     }
