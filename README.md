@@ -90,6 +90,9 @@ plugins@mailjet.com
 Changelog
 ---------
 
+#### 7.x-2.21 27 August 2019
+* Add possibility to sync custom profile fields along with the user's `name` either on initial and single contact sync
+
 #### 7.x-2.20 22 August 2019
 * Bugfixes and internal improvements regarding single contact sync
 
