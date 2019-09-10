@@ -639,7 +639,7 @@ function mailjet_properties_sync($newField = NULL, $delete = FALSE) {
       else {
           $updateResponse = MailjetApi::updateMailjetContactProperty($properties[$field['Name']]['ID'], $field['Name'], $field['Datatype']);
         if (false != $updateResponse) {
-          drupal_set_message(t('Field ' . $field['Name'] . ' in now updated in your MailJet account!'), 'status');
+          drupal_set_message(t('Field ' . $field['Name'] . ' is now updated in your MailJet account!'), 'status');
         }
         else {
           drupal_set_message(t('Couldn\'t update ' . $field['Name'] . ' in your MailJet account!'), 'error');
@@ -649,7 +649,7 @@ function mailjet_properties_sync($newField = NULL, $delete = FALSE) {
     else {
       $insertResponse = MailjetApi::createMailjetContactProperty($field['Name'], $field['Datatype']);
       if (false != $insertResponse) {
-        drupal_set_message(t('Field ' . $field['Name'] . ' in now inserted in your MailJet account!'), 'status');
+        drupal_set_message(t('Field ' . $field['Name'] . ' is now inserted in your MailJet account!'), 'status');
         $properties[$field['Name']] = $field; // Add it here, so the next loop it wont be handled again
       }
       else {
@@ -733,9 +733,20 @@ function mailjet_sync_single_user($user, $action) {
           $propertyName = str_replace('email', 'property_email', $propertyName);
 
           if (strpos($propertyName, "field_") !== FALSE) {
-            $properties[str_replace('field_', '', $propertyName)] = (!empty($propertyValue)) ? $propertyValue['und'][0]['value'] : '';
+            // Process multi-value fields
+            if (count($propertyValue['und']) > 1) {
+              $values = [];
+              foreach ($propertyValue['und'] as $value) {
+                $values[] = $value['value'];
+                $commaSeparatedValues = implode(', ', $values);
+                $properties[str_replace('field_', '', $propertyName)] = (!empty($commaSeparatedValues)) ? $commaSeparatedValues : '';
+              }
+            } else {
+              $properties[str_replace('field_', '', $propertyName)] = (!empty($propertyValue)) ? $propertyValue['und'][0]['value'] : '';
+            }
           }
         }
+
         if (!empty($properties)) {
           foreach ($properties as $propertyName => $propertyValue) {
             $propertyDefinitions[] = ['type' => 'str', 'field_name' => $propertyName];
